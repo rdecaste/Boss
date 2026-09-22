@@ -22,6 +22,8 @@ body{width:100vw;height:100vh;height:100dvh}
 .value.boss-name{font-size:clamp(15px,5vw,21px);max-width:60vw;line-height:1.1}
 .value.level-num{font-size:clamp(23px,6.5vw,31px);line-height:1}
 .hud-bottom{position:absolute;left:calc(12px + var(--safe-left));right:calc(12px + var(--safe-right));bottom:calc(14px + var(--safe-bottom));z-index:2;pointer-events:none}
+.hp-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px}
+.hp-num{font-size:12px;font-weight:850;letter-spacing:-.01em;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.9);font-variant-numeric:tabular-nums}
 .hp-track{width:100%;height:7px;overflow:hidden;border-radius:999px;background:rgba(255,255,255,.18)}
 .hp-fill{width:100%;height:100%;border-radius:inherit;background:linear-gradient(90deg,#ff5f5f,#ff9f1c);transition:width 300ms ease}
 @media(prefers-reduced-motion:reduce){.hero-video{transition:none}.hp-fill{transition:none}}
@@ -36,6 +38,7 @@ body{width:100vw;height:100vh;height:100dvh}
 <div class="metric right"><div class="label">Level</div><div class="value level-num" id="level">—</div></div>
 </div>
 <div class="hud-bottom" id="hpHud" hidden>
+<div class="hp-head"><span class="label">HP</span><span class="hp-num" id="hpNum">—</span></div>
 <div class="hp-track"><div class="hp-fill" id="hpFill"></div></div>
 </div>
 </main>
@@ -52,13 +55,17 @@ const bossNameEl = document.getElementById('bossName');
 const levelEl = document.getElementById('level');
 const hpHudEl = document.getElementById('hpHud');
 const hpFillEl = document.getElementById('hpFill');
+const hpNumEl = document.getElementById('hpNum');
 let loadedVideoKey = '';
 function renderState(state) {
   bossNameEl.textContent = state.boss_name ?? '—';
   levelEl.textContent = state.hero_level ?? '—';
   if (state.current_hp != null && state.max_hp) {
-    const pct = Math.max(0, Math.min(100, (Number(state.current_hp) / Number(state.max_hp)) * 100));
+    const curHp = Number(state.current_hp);
+    const maxHp = Number(state.max_hp);
+    const pct = Math.max(0, Math.min(100, (curHp / maxHp) * 100));
     hpFillEl.style.width = pct + '%';
+    hpNumEl.textContent = Math.round(curHp).toLocaleString() + ' / ' + Math.round(maxHp).toLocaleString();
     hpHudEl.hidden = false;
   } else {
     hpHudEl.hidden = true;
