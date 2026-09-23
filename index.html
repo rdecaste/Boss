@@ -51,12 +51,13 @@ body{width:100vw;height:100vh;height:100dvh}
 .tab{border:0;margin:0;padding:7px 0;border-radius:8px;background:transparent;color:var(--dim);font:inherit;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;cursor:pointer}
 .tab[aria-selected="true"]{background:rgba(255,255,255,.12);color:#fff}
 .panel{flex:1;min-height:0;display:flex;flex-direction:column}
-.panel[hidden]{display:none}
+.panel[hidden],.tiles[hidden],.group-label[hidden]{display:none}
 .pad{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding-bottom:12px}
 .group-label{margin:12px 2px 6px}
 .tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
 .tile{position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;min-height:66px;padding:8px 8px 7px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.04);color:var(--text);font:inherit;text-align:left;cursor:pointer;touch-action:pan-y;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 .tile.hero{background:rgba(255,95,95,.06);border-color:rgba(255,95,95,.16)}
+.tile.workout{background:rgba(90,170,255,.06);border-color:rgba(90,170,255,.18)}
 .tile-name{font-size:12px;font-weight:750;line-height:1.15;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .tile-since{margin-top:6px;display:flex;align-items:baseline;gap:4px;font-variant-numeric:tabular-nums}
 .tile-since b{font-size:16px;font-weight:850;letter-spacing:-.02em}
@@ -125,10 +126,12 @@ body{width:100vw;height:100vh;height:100dvh}
 </div>
 <div class="panel" id="panelAttack" role="tabpanel" aria-labelledby="tabAttack">
 <div class="pad" id="pad">
-<div class="label group-label">Hit the boss</div>
-<div class="tiles" id="bossTiles"></div>
-<div class="label group-label">Took damage</div>
-<div class="tiles" id="heroTiles"></div>
+<div class="label group-label">Good habits</div>
+<div class="tiles" id="goodTiles"></div>
+<div class="label group-label">Bad habits</div>
+<div class="tiles" id="badTiles"></div>
+<div class="label group-label">Workouts</div>
+<div class="tiles" id="workoutTiles"></div>
 </div>
 <div class="hint">Hold to attack · Tap the header to flip</div>
 </div>
@@ -292,33 +295,38 @@ function lastDone(habit) {
   const a = Date.parse(habit.last_attack || '');
   const s = Date.parse(habit.last_strava || '');
   if (isNaN(a) && isNaN(s)) return { at: null, strava: false };
-  if (isNaN(a) || (!isNaN(s) && s > a)) return { at: habit.last_strava, strava: true };
+  if (isNaN(a) || (!isNaN(s) && s >= a)) return { at: habit.last_strava, strava: true };
   return { at: habit.last_attack, strava: false };
 }
 
 // ---- Attack pad: hold a tile to attack ----
+// The publisher sends the group; older data.json files fall back to the effect.
+function groupOf(habit) {
+  if (habit.group) return habit.group;
+  if (habit.effect === 'Hero HP') return 'bad';
+  return habit.last_strava ? 'workout' : 'good';
+}
+let tilesSignature = '';
 function renderTiles() {
   const habits = (latestState && Array.isArray(latestState.habits)) ? latestState.habits : [];
-  const boss = $('bossTiles');
-  const hero = $('heroTiles');
-  const existing = new Map([...document.querySelectorAll('.tile')].map(tile => [tile.dataset.key, tile]));
-  const wanted = habits.map(h => h.key).join(',');
-  if ([...existing.keys()].join(',') !== wanted) {
-    boss.replaceChildren();
-    hero.replaceChildren();
-    existing.clear();
-    for (const habit of habits) {
-      const tile = buildTile(habit);
-      (habit.effect === 'Hero HP' ? hero : boss).append(tile);
-      existing.set(habit.key, tile);
+  const lists = { good: $('goodTiles'), bad: $('badTiles'), workout: $('workoutTiles') };
+  const signature = habits.map(h => groupOf(h) + ':' + h.key).join(',');
+  if (signature !== tilesSignature) {
+    tilesSignature = signature;
+    for (const list of Object.values(lists)) list.replaceChildren();
+    for (const habit of habits) (lists[groupOf(habit)] || lists.good).append(buildTile(habit));
+    for (const list of Object.values(lists)) {
+      list.hidden = !list.children.length;
+      list.previousElementSibling.hidden = !list.children.length;
     }
   }
-  for (const habit of habits) updateTile(existing.get(habit.key), habit);
+  const tiles = new Map([...document.querySelectorAll('.tile')].map(tile => [tile.dataset.key, tile]));
+  for (const habit of habits) updateTile(tiles.get(habit.key), habit);
 }
 function buildTile(habit) {
   const tile = document.createElement('button');
   tile.type = 'button';
-  tile.className = 'tile' + (habit.effect === 'Hero HP' ? ' hero' : '');
+  tile.className = 'tile' + (habit.effect === 'Hero HP' ? ' hero' : '') + (groupOf(habit) === 'workout' ? ' workout' : '');
   tile.dataset.key = habit.key;
   tile.innerHTML = '<div class="tile-name"></div><div class="tile-since"><b></b><span></span></div><div class="charge"></div>';
   attachHold(tile);
