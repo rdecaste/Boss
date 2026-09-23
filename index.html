@@ -134,7 +134,17 @@ function setFlipped(flipped) {
   clearTimeout(flipTimer);
   flipTimer = setTimeout(() => cardEl.classList.toggle('show-back', flipped), flipMs / 2);
   if (flipped) logEl.scrollTop = 0;
+  else resumeActiveVideo();
 }
+// Browsers pause muted autoplay video while it is hidden (flipped away, or the
+// tab in the background) and do not always restart it, which leaves the front black.
+function resumeActiveVideo() {
+  const active = videos[activeVideoIndex];
+  if (!crossfadeRunning && active.currentSrc && active.paused) active.play().catch(() => {});
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && !cardEl.classList.contains('is-flipped')) resumeActiveVideo();
+});
 cardEl.addEventListener('click', () => setFlipped(!cardEl.classList.contains('is-flipped')));
 cardEl.addEventListener('keydown', event => {
   if (event.key === 'Enter' || event.key === ' ') {
