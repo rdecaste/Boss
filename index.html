@@ -47,11 +47,15 @@ body{width:100vw;height:100vh;height:100dvh}
 .sc-title{font-size:clamp(17px,5.4vw,23px);font-weight:850;letter-spacing:-.02em;line-height:1.1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sc-hp{font-size:12px;font-weight:800;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
 .back .hp-track{margin-top:8px;height:6px}
+.hero-line{display:flex;justify-content:space-between;align-items:baseline;margin-top:9px}
+.hero-hp{font-size:11px;font-weight:800;color:#ffd0d0;font-variant-numeric:tabular-nums}
+.back .hero-track{margin-top:4px;height:4px}
+.hero-fill{background:linear-gradient(90deg,#ff8f8f,#ffd0d0)}
 .tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:12px;padding:3px;border-radius:11px;background:rgba(255,255,255,.06)}
 .tab{border:0;margin:0;padding:7px 0;border-radius:8px;background:transparent;color:var(--dim);font:inherit;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;cursor:pointer}
 .tab[aria-selected="true"]{background:rgba(255,255,255,.12);color:#fff}
 .panel{flex:1;min-height:0;display:flex;flex-direction:column}
-.panel[hidden],.tiles[hidden],.group-label[hidden]{display:none}
+.panel[hidden],.tiles[hidden],.group-label[hidden],.hero-line[hidden],.hp-track[hidden]{display:none}
 .pad{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding-bottom:12px}
 .group-label{margin:12px 2px 6px}
 .tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
@@ -77,7 +81,13 @@ body{width:100vw;height:100vh;height:100dvh}
 .stat{padding:8px 6px 7px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.035);text-align:center;min-width:0}
 .stat-num{font-size:clamp(16px,5vw,21px);font-weight:850;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.1}
 .stat .label{margin-top:3px;font-size:7.5px;color:var(--dim)}
-.log-head{display:flex;justify-content:space-between;align-items:baseline;margin:14px 2px 6px}
+.log-head{display:flex;justify-content:space-between;align-items:center;margin:12px 2px 2px}
+.filters{display:flex;gap:4px}
+.chip{border:1px solid var(--line);margin:0;padding:4px 10px;border-radius:999px;background:transparent;color:var(--dim);font:inherit;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
+.chip[aria-pressed="true"]{background:rgba(255,255,255,.12);border-color:transparent;color:#fff}
+.day{position:sticky;top:0;z-index:2;display:flex;justify-content:space-between;align-items:baseline;padding:12px 4px 5px;border-bottom:1px solid var(--line);background:#0c101a}
+.day-sum{font-size:10px;font-weight:800;color:var(--warm);font-variant-numeric:tabular-nums}
+.day-sum .you{color:#ff8f8f}
 .log{flex:1;min-height:0;margin:0;padding:0;list-style:none;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;-webkit-mask-image:linear-gradient(180deg,#000 calc(100% - 22px),transparent);mask-image:linear-gradient(180deg,#000 calc(100% - 22px),transparent)}
 .log>li:last-child{margin-bottom:18px}
 .row{position:relative;overflow:hidden;border-bottom:1px solid var(--line);transition:height 260ms ease,opacity 260ms ease}
@@ -93,6 +103,8 @@ body{width:100vw;height:100vh;height:100dvh}
 .hit-dmg{grid-column:2;grid-row:1/span 2;text-align:right;font-size:18px;font-weight:850;letter-spacing:-.02em;color:var(--warm);font-variant-numeric:tabular-nums}
 .hit-dmg small{display:block;font-size:10px;font-weight:700;letter-spacing:0;color:var(--dim)}
 .row.crit .hit-dmg{color:var(--hot)}
+.row.hurt .hit-dmg{color:#ff8f8f}
+.row.hurt .hit-name::before{content:'';display:inline-block;width:6px;height:6px;margin-right:7px;border-radius:50%;background:#ff8f8f;vertical-align:2px}
 .crit-tag{display:inline-block;margin-left:6px;padding:1px 5px;border-radius:5px;background:rgba(255,95,95,.18);color:var(--hot);font-size:9px;font-weight:850;letter-spacing:.08em;vertical-align:2px}
 .empty{padding:28px 4px;text-align:center;color:var(--dim);font-size:13px}
 .hint{margin-top:6px;text-align:center;font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.32)}
@@ -120,6 +132,8 @@ body{width:100vw;height:100vh;height:100dvh}
 <section class="face back" id="back" aria-hidden="true">
 <div class="sc-head"><div class="sc-title" id="scBoss">—</div><div class="sc-hp" id="scHp">—</div></div>
 <div class="hp-track"><div class="hp-fill" id="scFill"></div></div>
+<div class="hero-line" id="heroLine" hidden><span class="label" id="heroName">Hero</span><span class="hero-hp" id="heroHp">—</span></div>
+<div class="hp-track hero-track" id="heroTrack" hidden><div class="hp-fill hero-fill" id="heroFill"></div></div>
 <div class="tabs" role="tablist">
 <button class="tab" type="button" role="tab" id="tabAttack" aria-controls="panelAttack" aria-selected="true">Attack</button>
 <button class="tab" type="button" role="tab" id="tabLog" aria-controls="panelLog" aria-selected="false">Log</button>
@@ -142,7 +156,14 @@ body{width:100vw;height:100vh;height:100dvh}
 <div class="stat"><div class="stat-num" id="stCrits">0</div><div class="label">Crits</div></div>
 <div class="stat"><div class="stat-num" id="stBest">0</div><div class="label">Best hit</div></div>
 </div>
-<div class="log-head"><span class="label">Damage log</span><span class="label" id="logCount"></span></div>
+<div class="log-head">
+<div class="filters" role="group" aria-label="Show hits">
+<button class="chip" type="button" data-filter="all" aria-pressed="true">All</button>
+<button class="chip" type="button" data-filter="boss" aria-pressed="false">Boss</button>
+<button class="chip" type="button" data-filter="hero" aria-pressed="false">Me</button>
+</div>
+<span class="label" id="logCount"></span>
+</div>
 <ul class="log" id="log"></ul>
 <div class="hint">Swipe a hit left to revert · Tap to flip back</div>
 </div>
@@ -161,6 +182,7 @@ const ATTACK_URL = 'https://hook.eu2.make.com/473lvjmuusks2syjve4y2mrco5eye82d';
 const REVERT_URL = 'https://hook.eu2.make.com/91jpq9bav3688kr4mt21obvqx63w04x7';
 const PASSCODE_KEY = 'boss-revert-passcode';
 const TAB_KEY = 'boss-tab';
+const FILTER_KEY = 'boss-log-filter';
 const REFRESH_MS = 15000;
 const CROSSFADE_MS = 1200;
 const CROSSFADE_LEAD_MS = 60;
@@ -170,6 +192,9 @@ const HOLD_MS = 600;
 const PENDING_MS = 180000;
 const FRESH_MS = 60000;
 const TIME_ZONE = 'Europe/Amsterdam';
+// The game day rolls over at 04:00 with the Main Quest run, so a 01:00 snack
+// belongs to the day before.
+const DAY_START_HOURS = 4;
 const videos = [document.getElementById('heroVideoA'), document.getElementById('heroVideoB')];
 let activeVideoIndex = 0;
 let crossfadeRunning = false;
@@ -218,12 +243,12 @@ document.addEventListener('visibilitychange', () => {
 cardEl.addEventListener('click', event => {
   // A swipe or hold ends in a click on some browsers; an open row closes on the next tap.
   if (suppressClick) { suppressClick = false; return; }
-  if (event.target.closest('.row-action, .tile, .tabs')) return;
+  if (event.target.closest('.row-action, .tile, .tabs, .filters')) return;
   if (openRow) { closeOpenRow(); return; }
   if (busy) return;
   const flipped = cardEl.classList.contains('is-flipped');
   // On the attack pad only the header flips back, so a missed tile tap does not.
-  if (flipped && !$('panelAttack').hidden && !event.target.closest('.sc-head, .hp-track, .hint')) return;
+  if (flipped && !$('panelAttack').hidden && !event.target.closest('.sc-head, .hp-track, .hero-line, .hint')) return;
   setFlipped(!flipped);
 });
 cardEl.addEventListener('keydown', event => {
@@ -247,6 +272,16 @@ function showTab(name) {
 $('tabAttack').addEventListener('click', () => showTab('attack'));
 $('tabLog').addEventListener('click', () => showTab('log'));
 try { showTab(localStorage.getItem(TAB_KEY) || 'attack'); } catch (_) { showTab('attack'); }
+
+let logFilter = 'all';
+function setFilter(name) {
+  logFilter = ['boss', 'hero'].includes(name) ? name : 'all';
+  document.querySelectorAll('.chip').forEach(chip => chip.setAttribute('aria-pressed', String(chip.dataset.filter === logFilter)));
+  try { localStorage.setItem(FILTER_KEY, logFilter); } catch (_) {}
+  if (latestState) renderLog(latestState);
+}
+document.querySelectorAll('.chip').forEach(chip => chip.addEventListener('click', () => setFilter(chip.dataset.filter)));
+try { setFilter(localStorage.getItem(FILTER_KEY) || 'all'); } catch (_) { setFilter('all'); }
 
 function showToast(message, isError) {
   toastEl.textContent = message;
@@ -418,7 +453,7 @@ async function attack(tile) {
       applyLocal(withHit(latestState, result, key), [{ kind: 'add', id: String(result.event_id || '').replace(/-/g, '') }]);
     } else if (result.code === 'hero_hit') {
       popOn(tile, '−' + result.damage + ' you', 'hurt');
-      applyLocal(withHabitTime(latestState, key, result.occurred_at || occurredAt), [{ kind: 'habit', key, at: result.occurred_at || occurredAt }]);
+      applyLocal(withHeroHit(latestState, result, key, occurredAt), [{ kind: 'add', id: String(result.event_id || '').replace(/-/g, '') }]);
     }
     showToast(result.text || result.message);
   } catch (error) {
@@ -439,7 +474,19 @@ function withHit(state, result, key) {
   if (result.hp_max) next.max_hp = Number(result.hp_max);
   const id = String(result.event_id || '').replace(/-/g, '');
   const log = (state.log || []).filter(hit => hit.id !== id);
-  log.unshift({ id, at: result.occurred_at, habit: result.habit, damage: Number(result.damage) || 0, crit: result.critical ? 1 : 0, hp_after: Number(result.hp_after) });
+  log.unshift({ id, kind: 'boss', at: result.occurred_at, habit: result.habit, damage: Number(result.damage) || 0, crit: result.critical ? 1 : 0, hp_after: Number(result.hp_after) });
+  next.log = log;
+  return next;
+}
+// A hit on the hero: Battle's hp_after / hp_max are the hero's.
+function withHeroHit(state, result, key, occurredAt) {
+  const at = result.occurred_at || occurredAt;
+  const next = withHabitTime(state, key, at);
+  next.hero_hp = Number(result.hp_after);
+  if (result.hp_max) next.hero_max_hp = Number(result.hp_max);
+  const id = String(result.event_id || '').replace(/-/g, '');
+  const log = (state.log || []).filter(hit => hit.id !== id);
+  log.unshift({ id, kind: 'hero', at, habit: result.habit, damage: Number(result.damage) || 0, crit: 0, hp_after: Number(result.hp_after) });
   next.log = log;
   return next;
 }
@@ -456,10 +503,6 @@ function satisfied(expectation, fetched) {
   const log = Array.isArray(fetched.log) ? fetched.log : [];
   if (expectation.kind === 'add') return !expectation.id || log.some(hit => hit.id === expectation.id);
   if (expectation.kind === 'drop') return !log.some(hit => hit.id === expectation.id);
-  if (expectation.kind === 'habit') {
-    const habit = (fetched.habits || []).find(h => h.key === expectation.key);
-    return !!habit && Date.parse(habit.last_attack || '') >= Date.parse(expectation.at) - 1000;
-  }
   return true;
 }
 function pickState(fetched) {
@@ -566,7 +609,7 @@ async function revertRow(row) {
     savePasscode(passcode);
     await collapseRow(row);
     busy = false;
-    applyLocal(withoutHit(latestState, id, result.hp_after, result.hp_max), [{ kind: 'drop', id }]);
+    applyLocal(withoutHit(latestState, id, result), [{ kind: 'drop', id }]);
     showToast(result.message);
   } catch (error) {
     busy = false;
@@ -577,13 +620,22 @@ async function revertRow(row) {
   }
 }
 // Make answers before it republishes data.json, so the card is updated here
-// the same way Make rebuilds the log: HP left is a running total from max HP.
-function withoutHit(state, id, hpAfter, hpMax) {
-  const next = Object.assign({}, state, { current_hp: Number(hpAfter) });
-  if (hpMax) next.max_hp = Number(hpMax);
+// the same way Make rebuilds the log: boss HP left is a running total from max
+// HP, hero HP left stays as recorded.
+function withoutHit(state, id, result) {
+  const next = Object.assign({}, state);
+  const hpAfter = Number(result.hp_after);
+  if (result.kind === 'hero') {
+    next.hero_hp = hpAfter;
+    if (result.hp_max) next.hero_max_hp = Number(result.hp_max);
+  } else {
+    next.current_hp = hpAfter;
+    if (result.hp_max) next.max_hp = Number(result.hp_max);
+  }
   const log = (state.log || []).filter(hit => hit.id !== id).map(hit => Object.assign({}, hit));
   let hp = Number(next.max_hp) || 0;
   for (let i = log.length - 1; i >= 0; i--) {
+    if (kindOf(log[i]) !== 'boss') continue;
     hp = Math.max(0, hp - (Number(log[i].damage) || 0));
     log[i].hp_after = hp;
   }
@@ -612,13 +664,31 @@ function formatWhen(iso) {
   return isNaN(date.getTime()) ? '' : whenFormat.format(date).replace(',', ' ·');
 }
 
+const dayKeyFormat = new Intl.DateTimeFormat('en-CA', { timeZone: TIME_ZONE, year: 'numeric', month: '2-digit', day: '2-digit' });
+const dayLabelFormat = new Intl.DateTimeFormat('en-GB', { timeZone: 'UTC', weekday: 'short', day: 'numeric', month: 'short' });
+function dayKey(ms) {
+  return dayKeyFormat.format(new Date(ms - DAY_START_HOURS * 3600000));
+}
+function dayLabel(key) {
+  if (key === dayKey(Date.now())) return 'Today';
+  if (key === dayKey(Date.now() - 86400000)) return 'Yesterday';
+  return dayLabelFormat.format(new Date(key + 'T12:00:00Z')).replace(',', '');
+}
+function kindOf(hit) {
+  return hit.kind === 'hero' ? 'hero' : 'boss';
+}
+
 function renderLog(state) {
-  const log = Array.isArray(state.log) ? state.log : [];
-  const damages = log.map(hit => Number(hit.damage) || 0);
+  const all = Array.isArray(state.log) ? state.log : [];
+  // The four totals describe the fight, so they only count hits on the boss.
+  const bossHits = all.filter(hit => kindOf(hit) === 'boss');
+  const damages = bossHits.map(hit => Number(hit.damage) || 0);
   $('stDamage').textContent = damages.reduce((a, b) => a + b, 0).toLocaleString();
-  $('stHits').textContent = log.length.toLocaleString();
-  $('stCrits').textContent = log.filter(hit => Number(hit.crit) === 1).length.toLocaleString();
+  $('stHits').textContent = bossHits.length.toLocaleString();
+  $('stCrits').textContent = bossHits.filter(hit => Number(hit.crit) === 1).length.toLocaleString();
   $('stBest').textContent = (damages.length ? Math.max(...damages) : 0).toLocaleString();
+
+  const log = logFilter === 'all' ? all : all.filter(hit => kindOf(hit) === logFilter);
   $('logCount').textContent = log.length ? log.length + (log.length === 1 ? ' hit' : ' hits') : '';
 
   openRow = null;
@@ -626,52 +696,87 @@ function renderLog(state) {
   if (!log.length) {
     const empty = document.createElement('li');
     empty.className = 'empty';
-    empty.textContent = 'No hits yet. Go land one.';
+    empty.textContent = logFilter === 'hero' ? 'Nothing has hit you this fight.' : 'No hits yet. Go land one.';
     logEl.append(empty);
     return;
   }
+  // The log arrives newest first, so each day's hits are already together.
+  const days = [];
   for (const hit of log) {
-    const crit = Number(hit.crit) === 1;
-    const row = document.createElement('li');
-    row.className = 'row' + (crit ? ' crit' : '');
-    const card = document.createElement('div');
-    card.className = 'hit';
-    const name = document.createElement('div');
-    name.className = 'hit-name';
-    name.textContent = hit.habit || 'Hit';
-    if (crit) {
-      const tag = document.createElement('span');
-      tag.className = 'crit-tag';
-      tag.textContent = 'CRIT';
-      name.append(tag);
-    }
-    const when = document.createElement('div');
-    when.className = 'hit-when';
-    when.textContent = formatWhen(hit.at);
-    const dmg = document.createElement('div');
-    dmg.className = 'hit-dmg';
-    dmg.textContent = '−' + (Number(hit.damage) || 0);
-    if (hit.hp_after != null) {
-      const left = document.createElement('small');
-      left.textContent = Number(hit.hp_after).toLocaleString() + ' HP left';
-      dmg.append(left);
-    }
-    card.append(name, dmg, when);
-    // Entries published before revert support have no event id to send.
-    if (hit.id) {
-      row.dataset.id = hit.id;
-      const action = document.createElement('button');
-      action.type = 'button';
-      action.className = 'row-action';
-      action.tabIndex = -1;
-      action.textContent = 'Revert';
-      row.append(action, card);
-      logEl.append(row);
-      attachSwipe(row);
-    } else {
-      row.append(card);
-      logEl.append(row);
-    }
+    const t = Date.parse(hit.at);
+    const key = isNaN(t) ? '' : dayKey(t);
+    if (!days.length || days[days.length - 1].key !== key) days.push({ key, hits: [] });
+    days[days.length - 1].hits.push(hit);
+  }
+  for (const day of days) {
+    logEl.append(buildDayHeader(day));
+    for (const hit of day.hits) appendHitRow(hit);
+  }
+}
+function buildDayHeader(day) {
+  const header = document.createElement('li');
+  header.className = 'day';
+  const label = document.createElement('span');
+  label.className = 'label';
+  label.textContent = day.key ? dayLabel(day.key) : 'Undated';
+  const sum = document.createElement('span');
+  sum.className = 'day-sum';
+  const total = kind => day.hits.filter(hit => kindOf(hit) === kind).reduce((a, hit) => a + (Number(hit.damage) || 0), 0);
+  const boss = total('boss');
+  const hero = total('hero');
+  if (boss) sum.append('−' + boss + ' boss');
+  if (boss && hero) sum.append(' · ');
+  if (hero) {
+    const you = document.createElement('span');
+    you.className = 'you';
+    you.textContent = '−' + hero + ' you';
+    sum.append(you);
+  }
+  header.append(label, sum);
+  return header;
+}
+function appendHitRow(hit) {
+  const hero = kindOf(hit) === 'hero';
+  const crit = !hero && Number(hit.crit) === 1;
+  const row = document.createElement('li');
+  row.className = 'row' + (crit ? ' crit' : '') + (hero ? ' hurt' : '');
+  const card = document.createElement('div');
+  card.className = 'hit';
+  const name = document.createElement('div');
+  name.className = 'hit-name';
+  name.textContent = hit.habit || 'Hit';
+  if (crit) {
+    const tag = document.createElement('span');
+    tag.className = 'crit-tag';
+    tag.textContent = 'CRIT';
+    name.append(tag);
+  }
+  const when = document.createElement('div');
+  when.className = 'hit-when';
+  when.textContent = formatWhen(hit.at);
+  const dmg = document.createElement('div');
+  dmg.className = 'hit-dmg';
+  dmg.textContent = '−' + (Number(hit.damage) || 0);
+  if (hit.hp_after != null) {
+    const left = document.createElement('small');
+    left.textContent = (hero ? 'you · ' : '') + Number(hit.hp_after).toLocaleString() + ' HP left';
+    dmg.append(left);
+  }
+  card.append(name, dmg, when);
+  // Entries published before revert support have no event id to send.
+  if (hit.id) {
+    row.dataset.id = hit.id;
+    const action = document.createElement('button');
+    action.type = 'button';
+    action.className = 'row-action';
+    action.tabIndex = -1;
+    action.textContent = 'Revert';
+    row.append(action, card);
+    logEl.append(row);
+    attachSwipe(row);
+  } else {
+    row.append(card);
+    logEl.append(row);
   }
 }
 
@@ -692,6 +797,16 @@ function renderState(state) {
   } else {
     $('hpHud').hidden = true;
     $('scHp').textContent = '';
+  }
+  const heroMax = Number(state.hero_max_hp);
+  const heroShown = heroMax > 0 && state.hero_hp != null;
+  $('heroLine').hidden = !heroShown;
+  $('heroTrack').hidden = !heroShown;
+  if (heroShown) {
+    const heroHp = Number(state.hero_hp);
+    $('heroName').textContent = state.hero_name || 'Hero';
+    $('heroHp').textContent = Math.round(heroHp).toLocaleString() + ' / ' + Math.round(heroMax).toLocaleString() + ' HP';
+    $('heroFill').style.width = Math.max(0, Math.min(100, (heroHp / heroMax) * 100)) + '%';
   }
   renderLog(state);
   renderTiles();
