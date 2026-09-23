@@ -8,29 +8,65 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <title>Boss Fight</title>
 <style>
-:root{--bg:#05070b;--text:#fff;--muted:rgba(255,255,255,.72);--safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px);--safe-left:env(safe-area-inset-left,0px);--safe-right:env(safe-area-inset-right,0px)}
+:root{--bg:#05070b;--card:#0b0f17;--line:rgba(255,255,255,.09);--text:#fff;--muted:rgba(255,255,255,.72);--dim:rgba(255,255,255,.5);--hot:#ff5f5f;--warm:#ff9f1c;--flip-ms:700ms;--gap:10px;--radius:20px;--safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px);--safe-left:env(safe-area-inset-left,0px);--safe-right:env(safe-area-inset-right,0px)}
 *{box-sizing:border-box}
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
 body{width:100vw;height:100vh;height:100dvh}
-.app{position:fixed;inset:0;overflow:hidden;background:var(--bg)}
+.scene{position:fixed;inset:0;padding:calc(var(--gap) + var(--safe-top)) calc(var(--gap) + var(--safe-right)) calc(var(--gap) + var(--safe-bottom)) calc(var(--gap) + var(--safe-left));perspective:1600px;background:var(--bg)}
+.card{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform var(--flip-ms) cubic-bezier(.2,.75,.25,1);cursor:pointer;outline:none;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+.card.is-flipped{transform:rotateX(180deg)}
+.card:focus-visible .face{box-shadow:0 0 0 2px var(--warm),0 18px 40px rgba(0,0,0,.55)}
+.face{position:absolute;inset:0;overflow:hidden;border-radius:var(--radius);border:1px solid var(--line);background:var(--card);box-shadow:0 18px 40px rgba(0,0,0,.55);-webkit-backface-visibility:hidden;backface-visibility:hidden;isolation:isolate}
+.face.back{transform:rotateX(180deg)}
+/* Belt and braces for Safari, where <video> can ignore backface-visibility:
+   the hidden face is swapped out at the midpoint, when both faces are edge-on. */
+.card.show-back .front,.card:not(.show-back) .back{visibility:hidden}
+
+/* Front: the live boss video */
 .hero-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;background:var(--bg);display:block;opacity:0;transition:opacity 1200ms linear;will-change:opacity;pointer-events:none;z-index:0}
 .hero-video.is-active{opacity:1}
-.hud-top{position:absolute;top:calc(12px + var(--safe-top));left:calc(12px + var(--safe-left));right:calc(12px + var(--safe-right));display:flex;justify-content:space-between;z-index:2;pointer-events:none}
+.hud-top{position:absolute;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;z-index:2;pointer-events:none}
 .metric.right{text-align:right}
 .label{font-size:8px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);text-shadow:0 1px 4px rgba(0,0,0,.85)}
 .value{margin-top:3px;font-weight:850;letter-spacing:-.02em;text-shadow:0 1px 6px rgba(0,0,0,.9)}
 .value.boss-name{font-size:clamp(15px,5vw,21px);max-width:60vw;line-height:1.1}
 .value.level-num{font-size:clamp(23px,6.5vw,31px);line-height:1}
-.hud-bottom{position:absolute;left:calc(12px + var(--safe-left));right:calc(12px + var(--safe-right));bottom:calc(14px + var(--safe-bottom));z-index:2;pointer-events:none}
+.hud-bottom{position:absolute;left:12px;right:12px;bottom:14px;z-index:2;pointer-events:none}
 .hp-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px}
 .hp-num{font-size:12px;font-weight:850;letter-spacing:-.01em;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.9);font-variant-numeric:tabular-nums}
 .hp-track{width:100%;height:7px;overflow:hidden;border-radius:999px;background:rgba(255,255,255,.18)}
-.hp-fill{width:100%;height:100%;border-radius:inherit;background:linear-gradient(90deg,#ff5f5f,#ff9f1c);transition:width 300ms ease}
-@media(prefers-reduced-motion:reduce){.hero-video{transition:none}.hp-fill{transition:none}}
+.hp-fill{width:100%;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--hot),var(--warm));transition:width 300ms ease}
+
+/* Back: the score card */
+.back{display:flex;flex-direction:column;padding:16px 14px 12px;background:radial-gradient(120% 70% at 50% 0%,rgba(255,95,95,.16),transparent 60%),linear-gradient(180deg,#111624,#080b12)}
+.sc-head{display:flex;justify-content:space-between;align-items:flex-end;gap:10px}
+.sc-title{font-size:clamp(17px,5.4vw,23px);font-weight:850;letter-spacing:-.02em;line-height:1.1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sc-hp{font-size:12px;font-weight:800;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.back .hp-track{margin-top:8px;height:6px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:14px}
+.stat{padding:8px 6px 7px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.035);text-align:center;min-width:0}
+.stat-num{font-size:clamp(16px,5vw,21px);font-weight:850;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.1}
+.stat .label{text-shadow:none;margin-top:3px;font-size:7.5px;color:var(--dim)}
+.log-head{display:flex;justify-content:space-between;align-items:baseline;margin:16px 2px 6px}
+.log-head .label{text-shadow:none}
+.log{flex:1;min-height:0;margin:0;padding:0;list-style:none;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;-webkit-mask-image:linear-gradient(180deg,#000 calc(100% - 22px),transparent);mask-image:linear-gradient(180deg,#000 calc(100% - 22px),transparent)}
+.hit{display:grid;grid-template-columns:1fr auto;align-items:center;gap:2px 10px;padding:9px 4px;border-bottom:1px solid var(--line)}
+.hit:last-child{border-bottom:0;margin-bottom:18px}
+.hit-name{font-size:14px;font-weight:750;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hit-when{grid-column:1;font-size:11px;color:var(--dim);font-variant-numeric:tabular-nums}
+.hit-dmg{grid-column:2;grid-row:1/span 2;text-align:right;font-size:18px;font-weight:850;letter-spacing:-.02em;color:var(--warm);font-variant-numeric:tabular-nums}
+.hit-dmg small{display:block;font-size:10px;font-weight:700;letter-spacing:0;color:var(--dim)}
+.hit.crit .hit-dmg{color:var(--hot)}
+.crit-tag{display:inline-block;margin-left:6px;padding:1px 5px;border-radius:5px;background:rgba(255,95,95,.18);color:var(--hot);font-size:9px;font-weight:850;letter-spacing:.08em;vertical-align:2px}
+.empty{padding:28px 4px;text-align:center;color:var(--dim);font-size:13px}
+.hint{margin-top:6px;text-align:center;font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.32)}
+@media(prefers-reduced-motion:reduce){.card{transition:none}.hero-video{transition:none}.hp-fill{transition:none}}
 </style>
 </head>
 <body>
-<main class="app" id="app">
+<div class="scene">
+<main class="card" id="card" role="button" tabindex="0" aria-pressed="false" aria-label="Boss card. Tap to show the score card.">
+<section class="face front" id="front">
 <video id="heroVideoA" class="hero-video is-active" autoplay muted playsinline preload="auto"></video>
 <video id="heroVideoB" class="hero-video" muted playsinline preload="auto"></video>
 <div class="hud-top">
@@ -41,7 +77,23 @@ body{width:100vw;height:100vh;height:100dvh}
 <div class="hp-head"><span class="label">HP</span><span class="hp-num" id="hpNum">—</span></div>
 <div class="hp-track"><div class="hp-fill" id="hpFill"></div></div>
 </div>
+</section>
+<section class="face back" id="back" aria-hidden="true">
+<div class="label" style="text-shadow:none">Score card</div>
+<div class="sc-head"><div class="sc-title" id="scBoss">—</div><div class="sc-hp" id="scHp">—</div></div>
+<div class="hp-track"><div class="hp-fill" id="scFill"></div></div>
+<div class="stats">
+<div class="stat"><div class="stat-num" id="stDamage">0</div><div class="label">Damage</div></div>
+<div class="stat"><div class="stat-num" id="stHits">0</div><div class="label">Hits</div></div>
+<div class="stat"><div class="stat-num" id="stCrits">0</div><div class="label">Crits</div></div>
+<div class="stat"><div class="stat-num" id="stBest">0</div><div class="label">Best hit</div></div>
+</div>
+<div class="log-head"><span class="label">Damage log</span><span class="label" id="logCount"></span></div>
+<ul class="log" id="log"></ul>
+<div class="hint">Tap to flip back</div>
+</section>
 </main>
+</div>
 <script>
 // Same-origin (GitHub Pages) rather than raw.githubusercontent: Pages purges
 // its CDN on deploy, raw does not. Measured 58s vs >200s to reflect an update.
@@ -49,29 +101,119 @@ const STATE_URL = 'data.json';
 const REFRESH_MS = 15000;
 const CROSSFADE_MS = 1200;
 const CROSSFADE_LEAD_MS = 60;
+const TIME_ZONE = 'Europe/Amsterdam';
 const videos = [document.getElementById('heroVideoA'), document.getElementById('heroVideoB')];
 let activeVideoIndex = 0;
 let crossfadeRunning = false;
 let crossfadeTimer = null;
+const cardEl = document.getElementById('card');
+const frontEl = document.getElementById('front');
+const backEl = document.getElementById('back');
 const bossNameEl = document.getElementById('bossName');
 const levelEl = document.getElementById('level');
 const hpHudEl = document.getElementById('hpHud');
 const hpFillEl = document.getElementById('hpFill');
 const hpNumEl = document.getElementById('hpNum');
+const scBossEl = document.getElementById('scBoss');
+const scHpEl = document.getElementById('scHp');
+const scFillEl = document.getElementById('scFill');
+const logEl = document.getElementById('log');
+const logCountEl = document.getElementById('logCount');
+const stat = id => document.getElementById(id);
 let loadedVideoKey = '';
+let flipTimer = null;
+
+function setFlipped(flipped) {
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const flipMs = reduceMotion ? 0 : parseFloat(getComputedStyle(cardEl).getPropertyValue('--flip-ms')) || 700;
+  cardEl.classList.toggle('is-flipped', flipped);
+  cardEl.setAttribute('aria-pressed', String(flipped));
+  cardEl.setAttribute('aria-label', flipped ? 'Score card. Tap to show the boss.' : 'Boss card. Tap to show the score card.');
+  frontEl.setAttribute('aria-hidden', String(flipped));
+  backEl.setAttribute('aria-hidden', String(!flipped));
+  clearTimeout(flipTimer);
+  flipTimer = setTimeout(() => cardEl.classList.toggle('show-back', flipped), flipMs / 2);
+  if (flipped) logEl.scrollTop = 0;
+}
+cardEl.addEventListener('click', () => setFlipped(!cardEl.classList.contains('is-flipped')));
+cardEl.addEventListener('keydown', event => {
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault();
+    setFlipped(!cardEl.classList.contains('is-flipped'));
+  }
+});
+
+const whenFormat = new Intl.DateTimeFormat('en-GB', { timeZone: TIME_ZONE, weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false });
+function formatWhen(iso) {
+  const date = new Date(iso);
+  return isNaN(date.getTime()) ? '' : whenFormat.format(date).replace(',', ' ·');
+}
+
+function renderLog(state) {
+  const log = Array.isArray(state.log) ? state.log : [];
+  const damages = log.map(hit => Number(hit.damage) || 0);
+  stat('stDamage').textContent = damages.reduce((a, b) => a + b, 0).toLocaleString();
+  stat('stHits').textContent = log.length.toLocaleString();
+  stat('stCrits').textContent = log.filter(hit => Number(hit.crit) === 1).length.toLocaleString();
+  stat('stBest').textContent = (damages.length ? Math.max(...damages) : 0).toLocaleString();
+  logCountEl.textContent = log.length ? log.length + (log.length === 1 ? ' hit' : ' hits') : '';
+
+  logEl.replaceChildren();
+  if (!log.length) {
+    const empty = document.createElement('li');
+    empty.className = 'empty';
+    empty.textContent = 'No hits yet. Go land one.';
+    logEl.append(empty);
+    return;
+  }
+  for (const hit of log) {
+    const crit = Number(hit.crit) === 1;
+    const item = document.createElement('li');
+    item.className = 'hit' + (crit ? ' crit' : '');
+    const name = document.createElement('div');
+    name.className = 'hit-name';
+    name.textContent = hit.habit || 'Hit';
+    if (crit) {
+      const tag = document.createElement('span');
+      tag.className = 'crit-tag';
+      tag.textContent = 'CRIT';
+      name.append(tag);
+    }
+    const when = document.createElement('div');
+    when.className = 'hit-when';
+    when.textContent = formatWhen(hit.at);
+    const dmg = document.createElement('div');
+    dmg.className = 'hit-dmg';
+    dmg.textContent = '−' + (Number(hit.damage) || 0);
+    if (hit.hp_after != null) {
+      const left = document.createElement('small');
+      left.textContent = Number(hit.hp_after).toLocaleString() + ' HP left';
+      dmg.append(left);
+    }
+    item.append(name, dmg, when);
+    logEl.append(item);
+  }
+}
+
 function renderState(state) {
   bossNameEl.textContent = state.boss_name ?? '—';
+  scBossEl.textContent = state.boss_name ?? '—';
   levelEl.textContent = state.hero_level ?? '—';
   if (state.current_hp != null && state.max_hp) {
     const curHp = Number(state.current_hp);
     const maxHp = Number(state.max_hp);
     const pct = Math.max(0, Math.min(100, (curHp / maxHp) * 100));
+    const hpText = Math.round(curHp).toLocaleString() + ' / ' + Math.round(maxHp).toLocaleString();
     hpFillEl.style.width = pct + '%';
-    hpNumEl.textContent = Math.round(curHp).toLocaleString() + ' / ' + Math.round(maxHp).toLocaleString();
+    scFillEl.style.width = pct + '%';
+    hpNumEl.textContent = hpText;
+    scHpEl.textContent = hpText + ' HP';
     hpHudEl.hidden = false;
   } else {
     hpHudEl.hidden = true;
+    scHpEl.textContent = '';
   }
+  renderLog(state);
 }
 function resetCrossfadeState() {
   crossfadeRunning = false;
