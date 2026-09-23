@@ -6,16 +6,17 @@
 <meta name="theme-color" content="#05070b" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="Boss" />
 <title>Boss Fight</title>
 <style>
-:root{--bg:#05070b;--card:#0b0f17;--line:rgba(255,255,255,.09);--text:#fff;--muted:rgba(255,255,255,.72);--dim:rgba(255,255,255,.5);--hot:#ff5f5f;--warm:#ff9f1c;--revert:#d93b3b;--flip-ms:1100ms;--gap:10px;--radius:20px;--safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px);--safe-left:env(safe-area-inset-left,0px);--safe-right:env(safe-area-inset-right,0px)}
+:root{--bg:#05070b;--card:#0b0f17;--line:rgba(255,255,255,.09);--text:#fff;--muted:rgba(255,255,255,.72);--dim:rgba(255,255,255,.5);--hot:#ff5f5f;--warm:#ff9f1c;--revert:#d93b3b;--flip-ms:1100ms;--hold-ms:600ms;--gap:10px;--radius:20px;--safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px);--safe-left:env(safe-area-inset-left,0px);--safe-right:env(safe-area-inset-right,0px)}
 *{box-sizing:border-box}
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
 body{width:100vw;height:100vh;height:100dvh}
 .scene{position:fixed;inset:0;padding:calc(var(--gap) + var(--safe-top)) calc(var(--gap) + var(--safe-right)) calc(var(--gap) + var(--safe-bottom)) calc(var(--gap) + var(--safe-left));perspective:1800px;background:var(--bg)}
 /* Symmetric easing keeps the edge-on moment at exactly half the duration,
    which is when the faces swap visibility. */
-.card{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform var(--flip-ms) cubic-bezier(.45,0,.55,1);cursor:pointer;outline:none;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+.card{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform var(--flip-ms) cubic-bezier(.45,0,.55,1);cursor:pointer;outline:none;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 .card.is-flipped{transform:rotateY(180deg)}
 .card:focus-visible .face{box-shadow:0 0 0 2px var(--warm),0 18px 40px rgba(0,0,0,.55)}
 .face{position:absolute;inset:0;overflow:hidden;border-radius:var(--radius);border:1px solid var(--line);background:var(--card);box-shadow:0 18px 40px rgba(0,0,0,.55);-webkit-backface-visibility:hidden;backface-visibility:hidden;isolation:isolate}
@@ -39,18 +40,43 @@ body{width:100vw;height:100vh;height:100dvh}
 .hp-track{width:100%;height:7px;overflow:hidden;border-radius:999px;background:rgba(255,255,255,.18)}
 .hp-fill{width:100%;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--hot),var(--warm));transition:width 300ms ease}
 
-/* Back: the score card */
-.back{display:flex;flex-direction:column;padding:16px 14px 12px;background:radial-gradient(120% 70% at 50% 0%,rgba(255,95,95,.16),transparent 60%),linear-gradient(180deg,#111624,#080b12)}
+/* Back: attack pad and score card */
+.back{display:flex;flex-direction:column;padding:14px 14px 10px;background:radial-gradient(120% 70% at 50% 0%,rgba(255,95,95,.16),transparent 60%),linear-gradient(180deg,#111624,#080b12)}
+.back .label{text-shadow:none}
 .sc-head{display:flex;justify-content:space-between;align-items:flex-end;gap:10px}
 .sc-title{font-size:clamp(17px,5.4vw,23px);font-weight:850;letter-spacing:-.02em;line-height:1.1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sc-hp{font-size:12px;font-weight:800;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
 .back .hp-track{margin-top:8px;height:6px}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:14px}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:12px;padding:3px;border-radius:11px;background:rgba(255,255,255,.06)}
+.tab{border:0;margin:0;padding:7px 0;border-radius:8px;background:transparent;color:var(--dim);font:inherit;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;cursor:pointer}
+.tab[aria-selected="true"]{background:rgba(255,255,255,.12);color:#fff}
+.panel{flex:1;min-height:0;display:flex;flex-direction:column}
+.panel[hidden]{display:none}
+.pad{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding-bottom:12px}
+.group-label{margin:12px 2px 6px}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.tile{position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;min-height:66px;padding:8px 8px 7px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.04);color:var(--text);font:inherit;text-align:left;cursor:pointer;touch-action:pan-y;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+.tile.hero{background:rgba(255,95,95,.06);border-color:rgba(255,95,95,.16)}
+.tile-name{font-size:12px;font-weight:750;line-height:1.15;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.tile-since{margin-top:6px;display:flex;align-items:baseline;gap:4px;font-variant-numeric:tabular-nums}
+.tile-since b{font-size:16px;font-weight:850;letter-spacing:-.02em}
+.tile-since span{font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--dim)}
+.tile.fresh{border-color:rgba(255,159,28,.55);box-shadow:0 0 0 1px rgba(255,159,28,.25) inset}
+.tile.hero .tile-since b{color:#ffd0d0}
+.tile .charge{position:absolute;left:0;bottom:0;height:3px;width:0;background:linear-gradient(90deg,var(--hot),var(--warm))}
+.tile.is-charging .charge{width:100%;transition:width var(--hold-ms) linear}
+.tile.is-charging{transform:scale(.97);transition:transform 120ms ease}
+.tile.is-busy{opacity:.6}
+.tile.is-busy .tile-since b::after{content:'…'}
+.pop{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);font-size:22px;font-weight:900;letter-spacing:-.02em;color:var(--warm);text-shadow:0 2px 10px rgba(0,0,0,.8);pointer-events:none;animation:pop 1100ms ease-out forwards;white-space:nowrap}
+.pop.crit{color:var(--hot);font-size:26px}
+.pop.hurt{color:#ff8f8f}
+@keyframes pop{0%{opacity:0;transform:translate(-50%,-30%) scale(.6)}15%{opacity:1;transform:translate(-50%,-50%) scale(1.15)}70%{opacity:1}100%{opacity:0;transform:translate(-50%,-140%) scale(1)}}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:12px}
 .stat{padding:8px 6px 7px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.035);text-align:center;min-width:0}
 .stat-num{font-size:clamp(16px,5vw,21px);font-weight:850;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.1}
-.stat .label{text-shadow:none;margin-top:3px;font-size:7.5px;color:var(--dim)}
-.log-head{display:flex;justify-content:space-between;align-items:baseline;margin:16px 2px 6px}
-.log-head .label{text-shadow:none}
+.stat .label{margin-top:3px;font-size:7.5px;color:var(--dim)}
+.log-head{display:flex;justify-content:space-between;align-items:baseline;margin:14px 2px 6px}
 .log{flex:1;min-height:0;margin:0;padding:0;list-style:none;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;-webkit-mask-image:linear-gradient(180deg,#000 calc(100% - 22px),transparent);mask-image:linear-gradient(180deg,#000 calc(100% - 22px),transparent)}
 .log>li:last-child{margin-bottom:18px}
 .row{position:relative;overflow:hidden;border-bottom:1px solid var(--line);transition:height 260ms ease,opacity 260ms ease}
@@ -69,15 +95,15 @@ body{width:100vw;height:100vh;height:100dvh}
 .crit-tag{display:inline-block;margin-left:6px;padding:1px 5px;border-radius:5px;background:rgba(255,95,95,.18);color:var(--hot);font-size:9px;font-weight:850;letter-spacing:.08em;vertical-align:2px}
 .empty{padding:28px 4px;text-align:center;color:var(--dim);font-size:13px}
 .hint{margin-top:6px;text-align:center;font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.32)}
-.toast{position:absolute;left:14px;right:14px;bottom:34px;padding:10px 12px;border-radius:12px;background:rgba(20,24,34,.96);border:1px solid var(--line);box-shadow:0 8px 24px rgba(0,0,0,.5);font-size:13px;font-weight:650;text-align:center;opacity:0;transform:translateY(8px);transition:opacity 200ms ease,transform 200ms ease;pointer-events:none}
+.toast{position:absolute;left:14px;right:14px;bottom:30px;z-index:5;padding:10px 12px;border-radius:12px;background:rgba(20,24,34,.97);border:1px solid var(--line);box-shadow:0 8px 24px rgba(0,0,0,.5);font-size:13px;font-weight:650;line-height:1.35;text-align:center;white-space:pre-line;opacity:0;transform:translateY(8px);transition:opacity 200ms ease,transform 200ms ease;pointer-events:none}
 .toast.is-shown{opacity:1;transform:none}
 .toast.is-error{border-color:rgba(255,95,95,.5)}
-@media(prefers-reduced-motion:reduce){.card{transition:none}.hero-video{transition:none}.hp-fill{transition:none}.hit,.row{transition:none}}
+@media(prefers-reduced-motion:reduce){.card{transition:none}.hero-video{transition:none}.hp-fill{transition:none}.hit,.row{transition:none}.pop{animation-duration:1ms}}
 </style>
 </head>
 <body>
 <div class="scene">
-<main class="card" id="card" role="button" tabindex="0" aria-pressed="false" aria-label="Boss card. Tap to show the score card.">
+<main class="card" id="card" role="button" tabindex="0" aria-pressed="false" aria-label="Boss card. Tap to show the attack pad and score card.">
 <section class="face front" id="front">
 <video id="heroVideoA" class="hero-video is-active" autoplay muted playsinline preload="auto"></video>
 <video id="heroVideoB" class="hero-video" muted playsinline preload="auto"></video>
@@ -91,9 +117,22 @@ body{width:100vw;height:100vh;height:100dvh}
 </div>
 </section>
 <section class="face back" id="back" aria-hidden="true">
-<div class="label" style="text-shadow:none">Score card</div>
 <div class="sc-head"><div class="sc-title" id="scBoss">—</div><div class="sc-hp" id="scHp">—</div></div>
 <div class="hp-track"><div class="hp-fill" id="scFill"></div></div>
+<div class="tabs" role="tablist">
+<button class="tab" type="button" role="tab" id="tabAttack" aria-controls="panelAttack" aria-selected="true">Attack</button>
+<button class="tab" type="button" role="tab" id="tabLog" aria-controls="panelLog" aria-selected="false">Log</button>
+</div>
+<div class="panel" id="panelAttack" role="tabpanel" aria-labelledby="tabAttack">
+<div class="pad" id="pad">
+<div class="label group-label">Hit the boss</div>
+<div class="tiles" id="bossTiles"></div>
+<div class="label group-label">Took damage</div>
+<div class="tiles" id="heroTiles"></div>
+</div>
+<div class="hint">Hold to attack · Tap the header to flip</div>
+</div>
+<div class="panel" id="panelLog" role="tabpanel" aria-labelledby="tabLog" hidden>
 <div class="stats">
 <div class="stat"><div class="stat-num" id="stDamage">0</div><div class="label">Damage</div></div>
 <div class="stat"><div class="stat-num" id="stHits">0</div><div class="label">Hits</div></div>
@@ -103,6 +142,7 @@ body{width:100vw;height:100vh;height:100dvh}
 <div class="log-head"><span class="label">Damage log</span><span class="label" id="logCount"></span></div>
 <ul class="log" id="log"></ul>
 <div class="hint">Swipe a hit left to revert · Tap to flip back</div>
+</div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 </section>
 </main>
@@ -111,41 +151,37 @@ body{width:100vw;height:100vh;height:100dvh}
 // Same-origin (GitHub Pages) rather than raw.githubusercontent: Pages purges
 // its CDN on deploy, raw does not. Measured 58s vs >200s to reflect an update.
 const STATE_URL = 'data.json';
-// Make scenario 9852609 "Battle — Revert Event". It needs the passcode, so the
-// URL being public in this repo does not let anyone else heal the boss.
+// Make scenarios 9849975 "Battle — Record Habit Event" and 9852609 "Battle —
+// Revert Event". Both check the passcode, so these URLs being public in this
+// repo does not let anyone else attack or heal the boss.
+const ATTACK_URL = 'https://hook.eu2.make.com/473lvjmuusks2syjve4y2mrco5eye82d';
 const REVERT_URL = 'https://hook.eu2.make.com/91jpq9bav3688kr4mt21obvqx63w04x7';
 const PASSCODE_KEY = 'boss-revert-passcode';
+const TAB_KEY = 'boss-tab';
 const REFRESH_MS = 15000;
 const CROSSFADE_MS = 1200;
 const CROSSFADE_LEAD_MS = 60;
-// Pages takes about a minute to serve a new data.json; until then the revert
-// response is shown instead of the stale file.
-const OVERRIDE_MS = 180000;
+const HOLD_MS = 600;
+// Pages takes about a minute to serve a new data.json; until then what this
+// page just did is shown instead of the stale file.
+const PENDING_MS = 180000;
+const FRESH_MS = 60000;
 const TIME_ZONE = 'Europe/Amsterdam';
 const videos = [document.getElementById('heroVideoA'), document.getElementById('heroVideoB')];
 let activeVideoIndex = 0;
 let crossfadeRunning = false;
 let crossfadeTimer = null;
-const cardEl = document.getElementById('card');
-const frontEl = document.getElementById('front');
-const backEl = document.getElementById('back');
-const bossNameEl = document.getElementById('bossName');
-const levelEl = document.getElementById('level');
-const hpHudEl = document.getElementById('hpHud');
-const hpFillEl = document.getElementById('hpFill');
-const hpNumEl = document.getElementById('hpNum');
-const scBossEl = document.getElementById('scBoss');
-const scHpEl = document.getElementById('scHp');
-const scFillEl = document.getElementById('scFill');
-const logEl = document.getElementById('log');
-const logCountEl = document.getElementById('logCount');
-const toastEl = document.getElementById('toast');
-const stat = id => document.getElementById(id);
+const $ = id => document.getElementById(id);
+const cardEl = $('card');
+const frontEl = $('front');
+const backEl = $('back');
+const logEl = $('log');
+const toastEl = $('toast');
 let loadedVideoKey = '';
 let flipTimer = null;
 let toastTimer = null;
 let latestState = null;
-let override = null;
+let pending = [];
 let suppressClick = false;
 let openRow = null;
 let busy = false;
@@ -156,12 +192,12 @@ function setFlipped(flipped) {
   closeOpenRow();
   cardEl.classList.toggle('is-flipped', flipped);
   cardEl.setAttribute('aria-pressed', String(flipped));
-  cardEl.setAttribute('aria-label', flipped ? 'Score card. Tap to show the boss.' : 'Boss card. Tap to show the score card.');
+  cardEl.setAttribute('aria-label', flipped ? 'Attack pad and score card. Tap the header to show the boss.' : 'Boss card. Tap to show the attack pad and score card.');
   frontEl.setAttribute('aria-hidden', String(flipped));
   backEl.setAttribute('aria-hidden', String(!flipped));
   clearTimeout(flipTimer);
   flipTimer = setTimeout(() => cardEl.classList.toggle('show-back', flipped), flipMs / 2);
-  if (flipped) logEl.scrollTop = 0;
+  if (flipped) { logEl.scrollTop = 0; renderTiles(); }
   else resumeActiveVideo();
 }
 // Browsers pause muted autoplay video while it is hidden (flipped away, or the
@@ -171,15 +207,21 @@ function resumeActiveVideo() {
   if (!crossfadeRunning && active.currentSrc && active.paused) active.play().catch(() => {});
 }
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible' && !cardEl.classList.contains('is-flipped')) resumeActiveVideo();
+  if (document.visibilityState !== 'visible') return;
+  if (!cardEl.classList.contains('is-flipped')) resumeActiveVideo();
+  renderTiles();
+  refreshDashboard();
 });
 cardEl.addEventListener('click', event => {
-  // A swipe ends in a click on some browsers; an open row closes on the next tap.
+  // A swipe or hold ends in a click on some browsers; an open row closes on the next tap.
   if (suppressClick) { suppressClick = false; return; }
-  if (event.target.closest('.row-action')) return;
+  if (event.target.closest('.row-action, .tile, .tabs')) return;
   if (openRow) { closeOpenRow(); return; }
   if (busy) return;
-  setFlipped(!cardEl.classList.contains('is-flipped'));
+  const flipped = cardEl.classList.contains('is-flipped');
+  // On the attack pad only the header flips back, so a missed tile tap does not.
+  if (flipped && !$('panelAttack').hidden && !event.target.closest('.sc-head, .hp-track, .hint')) return;
+  setFlipped(!flipped);
 });
 cardEl.addEventListener('keydown', event => {
   if (event.target !== cardEl) return;
@@ -188,17 +230,239 @@ cardEl.addEventListener('keydown', event => {
     setFlipped(!cardEl.classList.contains('is-flipped'));
   }
 });
+cardEl.addEventListener('contextmenu', event => event.preventDefault());
+
+function showTab(name) {
+  const attack = name !== 'log';
+  $('tabAttack').setAttribute('aria-selected', String(attack));
+  $('tabLog').setAttribute('aria-selected', String(!attack));
+  $('panelAttack').hidden = !attack;
+  $('panelLog').hidden = attack;
+  closeOpenRow();
+  try { localStorage.setItem(TAB_KEY, attack ? 'attack' : 'log'); } catch (_) {}
+}
+$('tabAttack').addEventListener('click', () => showTab('attack'));
+$('tabLog').addEventListener('click', () => showTab('log'));
+try { showTab(localStorage.getItem(TAB_KEY) || 'attack'); } catch (_) { showTab('attack'); }
 
 function showToast(message, isError) {
   toastEl.textContent = message;
   toastEl.classList.toggle('is-error', !!isError);
   toastEl.classList.add('is-shown');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => toastEl.classList.remove('is-shown'), 3200);
+  toastTimer = setTimeout(() => toastEl.classList.remove('is-shown'), isError ? 3500 : 4200);
 }
 
-// Swipe a hit left: past half the row it reverts at once, a shorter swipe
-// leaves a Revert button to tap, anything less springs back.
+function readPasscode() {
+  try { return localStorage.getItem(PASSCODE_KEY) || ''; } catch (_) { return ''; }
+}
+function savePasscode(value) {
+  try {
+    if (value) localStorage.setItem(PASSCODE_KEY, value);
+    else localStorage.removeItem(PASSCODE_KEY);
+  } catch (_) {}
+}
+function askPasscode() {
+  return readPasscode() || (window.prompt('Passcode') || '').trim();
+}
+async function post(url, fields) {
+  const response = await fetch(url, { method: 'POST', body: new URLSearchParams(fields) });
+  const text = await response.text();
+  try { return JSON.parse(text); } catch (_) { throw new Error(text || 'No response'); }
+}
+function failMessage(error) {
+  return error instanceof TypeError ? 'Could not reach Make. Try again.' : error.message;
+}
+
+// ---- Time since ----
+function since(iso) {
+  const t = Date.parse(iso || '');
+  if (isNaN(t)) return null;
+  const minutes = Math.max(0, Math.floor((Date.now() - t) / 60000));
+  if (minutes < 1) return 'now';
+  if (minutes < 60) return minutes + 'm';
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return hours + 'h';
+  const days = Math.floor(hours / 24);
+  if (days < 14) return days + 'd';
+  if (days < 60) return Math.floor(days / 7) + 'w';
+  return Math.floor(days / 30) + 'mo';
+}
+function lastDone(habit) {
+  const a = Date.parse(habit.last_attack || '');
+  const s = Date.parse(habit.last_strava || '');
+  if (isNaN(a) && isNaN(s)) return { at: null, strava: false };
+  if (isNaN(a) || (!isNaN(s) && s > a)) return { at: habit.last_strava, strava: true };
+  return { at: habit.last_attack, strava: false };
+}
+
+// ---- Attack pad: hold a tile to attack ----
+function renderTiles() {
+  const habits = (latestState && Array.isArray(latestState.habits)) ? latestState.habits : [];
+  const boss = $('bossTiles');
+  const hero = $('heroTiles');
+  const existing = new Map([...document.querySelectorAll('.tile')].map(tile => [tile.dataset.key, tile]));
+  const wanted = habits.map(h => h.key).join(',');
+  if ([...existing.keys()].join(',') !== wanted) {
+    boss.replaceChildren();
+    hero.replaceChildren();
+    existing.clear();
+    for (const habit of habits) {
+      const tile = buildTile(habit);
+      (habit.effect === 'Hero HP' ? hero : boss).append(tile);
+      existing.set(habit.key, tile);
+    }
+  }
+  for (const habit of habits) updateTile(existing.get(habit.key), habit);
+}
+function buildTile(habit) {
+  const tile = document.createElement('button');
+  tile.type = 'button';
+  tile.className = 'tile' + (habit.effect === 'Hero HP' ? ' hero' : '');
+  tile.dataset.key = habit.key;
+  tile.innerHTML = '<div class="tile-name"></div><div class="tile-since"><b></b><span></span></div><div class="charge"></div>';
+  attachHold(tile);
+  return tile;
+}
+function updateTile(tile, habit) {
+  if (!tile) return;
+  const hero = habit.effect === 'Hero HP';
+  const done = lastDone(habit);
+  const ago = since(done.at);
+  tile.querySelector('.tile-name').textContent = habit.name;
+  const value = tile.querySelector('.tile-since b');
+  const unit = tile.querySelector('.tile-since span');
+  if (hero) {
+    value.textContent = ago === null ? '—' : (ago === 'now' ? '0m' : ago);
+    unit.textContent = ago === null ? 'no slips yet' : 'clean';
+  } else {
+    value.textContent = ago === null ? '—' : ago;
+    unit.textContent = ago === null ? 'not yet' : (ago === 'now' ? '' : (done.strava ? 'strava' : 'ago'));
+  }
+  const fresh = done.at && Date.now() - Date.parse(done.at) < FRESH_MS;
+  tile.classList.toggle('fresh', !!fresh && !hero);
+  const label = habit.name + (hero ? ', ' + (ago === null ? 'no slips yet' : ago + ' clean') : ', ' + (ago === null ? 'not done yet' : ago + ' ago'));
+  tile.setAttribute('aria-label', label + '. Hold to log.');
+}
+setInterval(() => { if (cardEl.classList.contains('is-flipped')) renderTiles(); }, 30000);
+
+function attachHold(tile) {
+  let timer = null, startX = 0, startY = 0, pointerId = null;
+  const cancel = () => {
+    clearTimeout(timer);
+    timer = null;
+    pointerId = null;
+    tile.classList.remove('is-charging');
+  };
+  tile.addEventListener('pointerdown', event => {
+    if (busy || event.button > 0) return;
+    pointerId = event.pointerId;
+    startX = event.clientX;
+    startY = event.clientY;
+    tile.classList.add('is-charging');
+    timer = setTimeout(() => {
+      timer = null;
+      tile.classList.remove('is-charging');
+      suppressClick = true;
+      setTimeout(() => { suppressClick = false; }, 400);
+      attack(tile);
+    }, HOLD_MS);
+  });
+  tile.addEventListener('pointermove', event => {
+    if (event.pointerId !== pointerId || !timer) return;
+    if (Math.abs(event.clientX - startX) > 10 || Math.abs(event.clientY - startY) > 10) cancel();
+  });
+  tile.addEventListener('pointerup', event => {
+    if (event.pointerId !== pointerId) return;
+    if (timer) showToast('Hold to log ' + (tile.querySelector('.tile-name').textContent || 'it'));
+    cancel();
+  });
+  tile.addEventListener('pointercancel', cancel);
+  tile.addEventListener('pointerleave', cancel);
+  tile.addEventListener('keydown', event => {
+    if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); attack(tile); }
+  });
+}
+function popOn(tile, text, cls) {
+  const pop = document.createElement('div');
+  pop.className = 'pop' + (cls ? ' ' + cls : '');
+  pop.textContent = text;
+  tile.append(pop);
+  setTimeout(() => pop.remove(), 1200);
+}
+
+async function attack(tile) {
+  if (busy) return;
+  const key = tile.dataset.key;
+  const passcode = askPasscode();
+  if (!passcode) return;
+  busy = true;
+  tile.classList.add('is-busy');
+  const occurredAt = new Date().toISOString();
+  try {
+    const data = await post(ATTACK_URL, { key, request_id: crypto.randomUUID(), occurred_at: occurredAt, passcode });
+    const result = data.result ? Object.assign({}, data.result, { event_id: data.event_id }) : data;
+    if (result.code === 'bad_passcode') savePasscode('');
+    if (!result.ok) throw new Error(result.text || result.message || 'Attack failed');
+    savePasscode(passcode);
+    if (result.code === 'hit') {
+      popOn(tile, (result.critical ? '⚡ −' : '−') + result.damage, result.critical ? 'crit' : '');
+      applyLocal(withHit(latestState, result, key), [{ kind: 'add', id: String(result.event_id || '').replace(/-/g, '') }]);
+    } else if (result.code === 'hero_hit') {
+      popOn(tile, '−' + result.damage + ' you', 'hurt');
+      applyLocal(withHabitTime(latestState, key, result.occurred_at || occurredAt), [{ kind: 'habit', key, at: result.occurred_at || occurredAt }]);
+    }
+    showToast(result.text || result.message);
+  } catch (error) {
+    showToast(failMessage(error), true);
+  } finally {
+    busy = false;
+    tile.classList.remove('is-busy');
+  }
+}
+function withHabitTime(state, key, at) {
+  const next = Object.assign({}, state);
+  next.habits = (state.habits || []).map(h => h.key === key ? Object.assign({}, h, { last_attack: at }) : h);
+  return next;
+}
+function withHit(state, result, key) {
+  const next = withHabitTime(state, key, result.occurred_at);
+  next.current_hp = Number(result.hp_after);
+  if (result.hp_max) next.max_hp = Number(result.hp_max);
+  const id = String(result.event_id || '').replace(/-/g, '');
+  const log = (state.log || []).filter(hit => hit.id !== id);
+  log.unshift({ id, at: result.occurred_at, habit: result.habit, damage: Number(result.damage) || 0, crit: result.critical ? 1 : 0, hp_after: Number(result.hp_after) });
+  next.log = log;
+  return next;
+}
+
+// ---- Pending local changes ----
+// Keep showing what this page just did until data.json reflects it.
+function applyLocal(state, expectations) {
+  const until = Date.now() + PENDING_MS;
+  pending = pending.concat(expectations.map(e => Object.assign({ until }, e)));
+  latestState = state;
+  renderState(state);
+}
+function satisfied(expectation, fetched) {
+  const log = Array.isArray(fetched.log) ? fetched.log : [];
+  if (expectation.kind === 'add') return !expectation.id || log.some(hit => hit.id === expectation.id);
+  if (expectation.kind === 'drop') return !log.some(hit => hit.id === expectation.id);
+  if (expectation.kind === 'habit') {
+    const habit = (fetched.habits || []).find(h => h.key === expectation.key);
+    return !!habit && Date.parse(habit.last_attack || '') >= Date.parse(expectation.at) - 1000;
+  }
+  return true;
+}
+function pickState(fetched) {
+  const now = Date.now();
+  pending = pending.filter(e => e.until > now && !satisfied(e, fetched));
+  return pending.length && latestState ? latestState : fetched;
+}
+
+// ---- Log: swipe a hit left to revert ----
+// Past half the row it reverts at once, a shorter swipe leaves a Revert button
+// to tap, anything less springs back.
 const OPEN_PX = 96;
 function setOffset(row, px) {
   row.querySelector('.hit').style.transform = px ? `translateX(${px}px)` : '';
@@ -276,24 +540,11 @@ function attachSwipe(row) {
   });
 }
 
-function readPasscode() {
-  try { return localStorage.getItem(PASSCODE_KEY) || ''; } catch (_) { return ''; }
-}
-function savePasscode(value) {
-  try {
-    if (value) localStorage.setItem(PASSCODE_KEY, value);
-    else localStorage.removeItem(PASSCODE_KEY);
-  } catch (_) {}
-}
-
 async function revertRow(row) {
   if (busy) return;
   const id = row.dataset.id;
-  let passcode = readPasscode();
-  if (!passcode) {
-    passcode = (window.prompt('Passcode to revert hits') || '').trim();
-    if (!passcode) { closeRow(row); return; }
-  }
+  const passcode = askPasscode();
+  if (!passcode) { closeRow(row); return; }
   busy = true;
   openRow = null;
   row.classList.remove('is-open');
@@ -301,25 +552,19 @@ async function revertRow(row) {
   row.querySelector('.row-action').textContent = 'Reverting…';
   setOffset(row, -row.getBoundingClientRect().width);
   try {
-    const response = await fetch(REVERT_URL, { method: 'POST', body: new URLSearchParams({ event_id: id, passcode }) });
-    const text = await response.text();
-    let result;
-    try { result = JSON.parse(text); } catch (_) { throw new Error(text || 'No response'); }
+    const result = await post(REVERT_URL, { event_id: id, passcode });
     if (result.code === 'bad_passcode') savePasscode('');
     if (!result.ok) throw new Error(result.message || 'Revert failed');
     savePasscode(passcode);
     await collapseRow(row);
-    const state = withoutHit(latestState, id, result.hp_after, result.hp_max);
-    override = { state, reverted: id, until: Date.now() + OVERRIDE_MS };
-    latestState = state;
     busy = false;
-    renderState(state);
+    applyLocal(withoutHit(latestState, id, result.hp_after, result.hp_max), [{ kind: 'drop', id }]);
     showToast(result.message);
   } catch (error) {
     busy = false;
     row.classList.remove('is-busy');
     closeRow(row);
-    showToast(error instanceof TypeError ? 'Could not reach Make. Try again.' : error.message, true);
+    showToast(failMessage(error), true);
     if (latestState) renderState(latestState);
   }
 }
@@ -362,11 +607,11 @@ function formatWhen(iso) {
 function renderLog(state) {
   const log = Array.isArray(state.log) ? state.log : [];
   const damages = log.map(hit => Number(hit.damage) || 0);
-  stat('stDamage').textContent = damages.reduce((a, b) => a + b, 0).toLocaleString();
-  stat('stHits').textContent = log.length.toLocaleString();
-  stat('stCrits').textContent = log.filter(hit => Number(hit.crit) === 1).length.toLocaleString();
-  stat('stBest').textContent = (damages.length ? Math.max(...damages) : 0).toLocaleString();
-  logCountEl.textContent = log.length ? log.length + (log.length === 1 ? ' hit' : ' hits') : '';
+  $('stDamage').textContent = damages.reduce((a, b) => a + b, 0).toLocaleString();
+  $('stHits').textContent = log.length.toLocaleString();
+  $('stCrits').textContent = log.filter(hit => Number(hit.crit) === 1).length.toLocaleString();
+  $('stBest').textContent = (damages.length ? Math.max(...damages) : 0).toLocaleString();
+  $('logCount').textContent = log.length ? log.length + (log.length === 1 ? ' hit' : ' hits') : '';
 
   openRow = null;
   logEl.replaceChildren();
@@ -423,33 +668,25 @@ function renderLog(state) {
 }
 
 function renderState(state) {
-  bossNameEl.textContent = state.boss_name ?? '—';
-  scBossEl.textContent = state.boss_name ?? '—';
-  levelEl.textContent = state.hero_level ?? '—';
+  $('bossName').textContent = state.boss_name ?? '—';
+  $('scBoss').textContent = state.boss_name ?? '—';
+  $('level').textContent = state.hero_level ?? '—';
   if (state.current_hp != null && state.max_hp) {
     const curHp = Number(state.current_hp);
     const maxHp = Number(state.max_hp);
     const pct = Math.max(0, Math.min(100, (curHp / maxHp) * 100));
     const hpText = Math.round(curHp).toLocaleString() + ' / ' + Math.round(maxHp).toLocaleString();
-    hpFillEl.style.width = pct + '%';
-    scFillEl.style.width = pct + '%';
-    hpNumEl.textContent = hpText;
-    scHpEl.textContent = hpText + ' HP';
-    hpHudEl.hidden = false;
+    $('hpFill').style.width = pct + '%';
+    $('scFill').style.width = pct + '%';
+    $('hpNum').textContent = hpText;
+    $('scHp').textContent = hpText + ' HP';
+    $('hpHud').hidden = false;
   } else {
-    hpHudEl.hidden = true;
-    scHpEl.textContent = '';
+    $('hpHud').hidden = true;
+    $('scHp').textContent = '';
   }
   renderLog(state);
-}
-// Until Pages serves a data.json without the reverted hit, keep showing the
-// state the revert returned.
-function pickState(fetched) {
-  if (!override) return fetched;
-  const stale = Array.isArray(fetched.log) && fetched.log.some(hit => hit.id === override.reverted);
-  if (stale && Date.now() < override.until) return override.state;
-  override = null;
-  return fetched;
+  renderTiles();
 }
 function resetCrossfadeState() {
   crossfadeRunning = false;
@@ -524,8 +761,8 @@ async function refreshDashboard() {
     if (!response.ok) return;
     const state = pickState(await response.json());
     latestState = state;
-    // Re-rendering mid-swipe would pull the row out from under the finger.
-    if (!busy && !openRow && !logEl.querySelector('.is-swiping')) renderState(state);
+    // Re-rendering mid-swipe or mid-hold would pull the row or tile out from under the finger.
+    if (!busy && !openRow && !document.querySelector('.is-swiping, .is-charging')) renderState(state);
     const videoUrl = state.video_url || '';
     const videoKey = String(state.video_public_id || state.video_version || videoUrl);
     if (videoUrl && videoKey !== loadedVideoKey) {
