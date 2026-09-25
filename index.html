@@ -112,8 +112,8 @@ body{width:100vw;height:100vh;height:100dvh}
 .toast.is-shown{opacity:1;transform:none}
 .toast.is-error{border-color:rgba(255,95,95,.5)}
 
-/* Attack tiles show what a hit does right now. Tier comes from the habit's
-   base damage (before the level multiplier): light, medium, heavy. */
+/* Attack tiles show how hard a hit lands: tier colour and 1-3 pips, from the
+   habit's base damage (before the level multiplier). No numbers on purpose. */
 .tile-dmg{display:flex;align-items:center;gap:5px;margin-top:5px;font-size:11px;font-weight:850;letter-spacing:-.01em;font-variant-numeric:tabular-nums;color:var(--tier,var(--dim))}
 .tile-dmg[hidden]{display:none}
 .pips{display:inline-flex;gap:2px}
@@ -431,7 +431,7 @@ function buildTile(habit) {
   tile.type = 'button';
   tile.className = 'tile' + (habit.effect === 'Hero HP' ? ' hero' : '') + (groupOf(habit) === 'workout' ? ' workout' : '');
   tile.dataset.key = habit.key;
-  tile.innerHTML = '<div class="tile-name"></div><div class="tile-dmg" hidden><span class="pips"><i></i><i></i><i></i></span><span class="dmg-num"></span></div><div class="tile-since"><b></b><span></span></div><span class="ko" hidden>KO</span><div class="charge"></div>';
+  tile.innerHTML = '<div class="tile-name"></div><div class="tile-dmg" hidden><span class="pips"><i></i><i></i><i></i></span></div><div class="tile-since"><b></b><span></span></div><span class="ko" hidden>KO</span><div class="charge"></div>';
   attachHold(tile);
   return tile;
 }
@@ -459,7 +459,6 @@ function updateTile(tile, habit) {
   let ko = '';
   if (dmg) {
     tile.classList.add('t' + dmg.tier);
-    tile.querySelector('.dmg-num').textContent = (hero ? '−' : '') + (dmg.min === dmg.max ? dmg.min : dmg.min + '–' + dmg.max);
     if (!hero) ko = koOf(dmg);
   }
   tile.classList.toggle('ko-sure', ko === 'sure');
@@ -474,13 +473,14 @@ setInterval(() => { if (cardEl.classList.contains('is-flipped')) renderTiles(); 
 
 // The publisher sends each habit's damage at the current level (Battle's
 // multiplier already applied). Tier is judged on the base damage so it stays
-// put as the multiplier grows: up to 14 light, up to 30 medium, above heavy.
+// put as the multiplier grows: base max up to 15 light, up to 32 medium, above
+// heavy (a little headroom, since dmg_max / multiplier is off by rounding).
 function damageOf(habit) {
   const min = Number(habit.dmg_min), max = Number(habit.dmg_max);
   if (habit.dmg_min == null || habit.dmg_max == null || !isFinite(min) || !isFinite(max)) return null;
   const mult = Number(habit.effect === 'Hero HP' ? latestState && latestState.hero_multiplier : latestState && latestState.power_multiplier) || 1;
   const base = max / mult;
-  return { min, max, tier: base <= 14 ? 1 : base <= 30 ? 2 : 3 };
+  return { min, max, tier: base <= 15 ? 1 : base <= 32 ? 2 : 3 };
 }
 // Battle never lets the first hit on a full-HP boss finish it.
 function koOf(dmg) {
