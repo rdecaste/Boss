@@ -26,15 +26,15 @@ body{width:100vw;height:100vh;height:100dvh}
 .card.show-back .front,.card:not(.show-back) .back{visibility:hidden}
 
 /* Front: the live boss video */
-.hero-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;background:var(--bg);display:block;opacity:0;transition:opacity 1200ms linear;will-change:opacity;pointer-events:none;z-index:0}
+.hero-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;background:var(--bg);display:block;opacity:0;filter:saturate(calc(1 - var(--d,0) * .35)) contrast(calc(1 + var(--d,0) * .18)) brightness(calc(1 - var(--d,0) * .12));transition:opacity 1200ms linear,filter 600ms ease;will-change:opacity;pointer-events:none;z-index:0}
 .hero-video.is-active{opacity:1}
-.hud-top{position:absolute;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;z-index:2;pointer-events:none}
+.hud-top{position:absolute;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;z-index:6;pointer-events:none}
 .metric.right{text-align:right}
 .label{font-size:8px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);text-shadow:0 1px 4px rgba(0,0,0,.85)}
 .value{margin-top:3px;font-weight:850;letter-spacing:-.02em;text-shadow:0 1px 6px rgba(0,0,0,.9)}
 .value.boss-name{font-size:clamp(15px,5vw,21px);max-width:60vw;line-height:1.1}
 .value.level-num{font-size:clamp(23px,6.5vw,31px);line-height:1}
-.hud-bottom{position:absolute;left:12px;right:12px;bottom:14px;z-index:2;pointer-events:none}
+.hud-bottom{position:absolute;left:12px;right:12px;bottom:14px;z-index:6;pointer-events:none}
 .hp-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px}
 .hp-num{font-size:12px;font-weight:850;letter-spacing:-.01em;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.9);font-variant-numeric:tabular-nums}
 .hp-track{width:100%;height:7px;overflow:hidden;border-radius:999px;background:rgba(255,255,255,.18)}
@@ -111,6 +111,40 @@ body{width:100vw;height:100vh;height:100dvh}
 .toast{position:absolute;left:14px;right:14px;bottom:30px;z-index:5;padding:10px 12px;border-radius:12px;background:rgba(20,24,34,.97);border:1px solid var(--line);box-shadow:0 8px 24px rgba(0,0,0,.5);font-size:13px;font-weight:650;line-height:1.35;text-align:center;white-space:pre-line;opacity:0;transform:translateY(8px);transition:opacity 200ms ease,transform 200ms ease;pointer-events:none}
 .toast.is-shown{opacity:1;transform:none}
 .toast.is-error{border-color:rgba(255,95,95,.5)}
+
+/* Damage overlay: the front shows how hurt the boss is. --d runs from 0 at
+   full HP to 1 at 0 HP; stage-2 is 26-60% HP, stage-3 is 25% or less. */
+.fx{position:absolute;inset:0;pointer-events:none}
+.fx-vignette{z-index:2;background:radial-gradient(ellipse 75% 65% at 50% 45%,transparent 40%,rgba(160,0,0,.55) 78%,rgba(90,0,0,.9) 100%);opacity:calc(var(--d,0) * var(--d,0) * 1.1);transition:opacity 600ms ease}
+.front.stage-3 .fx-vignette{animation:heartbeat 1.6s infinite}
+@keyframes heartbeat{0%,100%{filter:brightness(1)}12%{filter:brightness(1.6)}24%{filter:brightness(1.05)}36%{filter:brightness(1.45)}60%{filter:brightness(1)}}
+/* The boss's power wavers: short dark dips over the video */
+.fx-flicker{z-index:2;background:#000;opacity:0}
+.front.stage-3 .fx-flicker{animation:waver 3.2s infinite}
+@keyframes waver{0%,46%,50%,55%,100%{opacity:0}48%{opacity:.22}53%{opacity:.14}}
+.fx-cracks{z-index:3;width:100%;height:100%;opacity:0;transition:opacity 700ms ease}
+.fx-cracks path{fill:none;stroke:rgba(255,255,255,.75);stroke-width:1.3;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 2px rgba(255,120,120,.6))}
+.fx-cracks .glow{stroke:rgba(255,80,40,.35);stroke-width:4}
+.fx-cracks .s3{opacity:0;transition:opacity 700ms ease}
+.front.stage-2 .fx-cracks,.front.stage-3 .fx-cracks{opacity:1}
+.front.stage-3 .fx-cracks .s3{opacity:1}
+.fx-embers{z-index:4;width:100%;height:100%}
+.fx-flash{z-index:5;background:radial-gradient(circle at 50% 42%,rgba(255,255,255,.85),rgba(255,70,50,.55) 45%,rgba(120,0,0,.2));opacity:0}
+.fx-flash.go{animation:flash 380ms ease-out}
+@keyframes flash{0%{opacity:.9}100%{opacity:0}}
+.front.shake{animation:shake 420ms cubic-bezier(.36,.07,.19,.97)}
+@keyframes shake{10%,90%{transform:translate(-2px,1px)}20%,80%{transform:translate(4px,-2px)}30%,50%,70%{transform:translate(-7px,2px)}40%,60%{transform:translate(7px,-1px)}}
+.stage-tag{margin-left:8px;margin-right:auto;padding:2px 6px;border-radius:5px;font-size:8.5px;font-weight:850;letter-spacing:.12em;text-transform:uppercase;background:rgba(255,159,28,.22);color:#ffc680;opacity:0;transition:opacity 400ms}
+.front.stage-2 .stage-tag,.front.stage-3 .stage-tag{opacity:1}
+.front.stage-3 .stage-tag{background:rgba(255,60,60,.28);color:#ff9a9a;animation:blink 1.6s infinite}
+@keyframes blink{50%{opacity:.55}}
+/* Fighting-game damage trail: the HP just lost stays white, then drains */
+.hud-bottom .hp-track{position:relative}
+.hud-bottom .hp-fill{position:relative}
+.hp-trail{position:absolute;left:0;top:0;bottom:0;border-radius:inherit;background:rgba(255,255,255,.85);transition:width 700ms ease 450ms}
+.front.stage-3 .hud-bottom .hp-fill{background:linear-gradient(90deg,#ff2d2d,#ff6a3d);animation:blink 1s infinite}
+.pop.big{top:38%;z-index:7;font-size:34px}
+@media(prefers-reduced-motion:reduce){.front.shake,.front.stage-3 .fx-vignette,.front.stage-3 .fx-flicker,.front.stage-3 .stage-tag,.front.stage-3 .hud-bottom .hp-fill{animation:none}.hp-trail{transition:none}}
 @media(prefers-reduced-motion:reduce){.card{transition:none}.hero-video{transition:none}.hp-fill{transition:none}.hit,.row{transition:none}.pop{animation-duration:1ms}}
 </style>
 </head>
@@ -120,13 +154,21 @@ body{width:100vw;height:100vh;height:100dvh}
 <section class="face front" id="front">
 <video id="heroVideoA" class="hero-video is-active" autoplay muted playsinline preload="auto"></video>
 <video id="heroVideoB" class="hero-video" muted playsinline preload="auto"></video>
+<div class="fx fx-vignette"></div>
+<div class="fx fx-flicker"></div>
+<svg class="fx fx-cracks" viewBox="0 0 390 736" preserveAspectRatio="none" aria-hidden="true">
+<g><path class="glow" d="M0 92 L38 104 L61 97 L88 121 L112 118 M61 97 L70 64 L96 48 M38 104 L30 140 L46 171"/><path d="M0 92 L38 104 L61 97 L88 121 L112 118 M61 97 L70 64 L96 48 M38 104 L30 140 L46 171 M88 121 L94 148"/></g>
+<g class="s3"><path class="glow" d="M390 520 L352 532 L330 518 L301 540 L276 536 M330 518 L318 488 L292 470 M352 532 L361 566 L346 598"/><path d="M390 520 L352 532 L330 518 L301 540 L276 536 M330 518 L318 488 L292 470 M352 532 L361 566 L346 598 M301 540 L296 566"/><path class="glow" d="M390 250 L366 262 L358 290 L340 302 M366 262 L372 230"/><path d="M390 250 L366 262 L358 290 L340 302 M366 262 L372 230"/><path d="M0 640 L24 628 L44 640 L62 626 M24 628 L20 604"/></g>
+</svg>
+<canvas class="fx fx-embers" id="embers" aria-hidden="true"></canvas>
+<div class="fx fx-flash" id="flash"></div>
 <div class="hud-top">
 <div class="metric"><div class="label">Boss</div><div class="value boss-name" id="bossName">—</div></div>
 <div class="metric right"><div class="label">Level</div><div class="value level-num" id="level">—</div></div>
 </div>
 <div class="hud-bottom" id="hpHud" hidden>
-<div class="hp-head"><span class="label">HP</span><span class="hp-num" id="hpNum">—</span></div>
-<div class="hp-track"><div class="hp-fill" id="hpFill"></div></div>
+<div class="hp-head"><span class="label">HP</span><span class="stage-tag" id="stageTag"></span><span class="hp-num" id="hpNum">—</span></div>
+<div class="hp-track"><div class="hp-trail" id="hpTrail"></div><div class="hp-fill" id="hpFill"></div></div>
 </div>
 </section>
 <section class="face back" id="back" aria-hidden="true">
@@ -226,7 +268,7 @@ function setFlipped(flipped) {
   clearTimeout(flipTimer);
   flipTimer = setTimeout(() => cardEl.classList.toggle('show-back', flipped), flipMs / 2);
   if (flipped) { logEl.scrollTop = 0; renderTiles(); }
-  else resumeActiveVideo();
+  else { resumeActiveVideo(); setTimeout(() => { if (latestState) renderDamage(latestState); }, flipMs); }
 }
 // Browsers pause muted autoplay video while it is hidden (flipped away, or the
 // tab in the background) and do not always restart it, which leaves the front black.
@@ -798,6 +840,7 @@ function renderState(state) {
     $('hpHud').hidden = true;
     $('scHp').textContent = '';
   }
+  renderDamage(state);
   const heroMax = Number(state.hero_max_hp);
   const heroShown = heroMax > 0 && state.hero_hp != null;
   $('heroLine').hidden = !heroShown;
@@ -896,6 +939,107 @@ async function refreshDashboard() {
     console.error('Boss dashboard refresh failed', error);
   }
 }
+
+// ---- Damage overlay ----
+// The front gets more battered as the boss's HP drops. HP lost since this
+// device last saw the front plays as a hit: shake, flash, damage number and a
+// white trail on the HP bar. A new fight or a revert just resets what was seen.
+const SEEN_KEY = 'boss-seen-hp';
+const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+let damageStage = 1;
+function stageOf(pct) { return pct <= 25 ? 3 : pct <= 60 ? 2 : 1; }
+function readSeen() {
+  try { return JSON.parse(localStorage.getItem(SEEN_KEY) || 'null'); } catch (_) { return null; }
+}
+function writeSeen(fightId, hp) {
+  try { localStorage.setItem(SEEN_KEY, JSON.stringify({ fight: fightId, hp })); } catch (_) {}
+}
+function renderDamage(state) {
+  const cur = Number(state.current_hp), max = Number(state.max_hp);
+  const known = state.current_hp != null && max > 0;
+  const pct = known ? Math.max(0, Math.min(100, cur / max * 100)) : 100;
+  damageStage = known ? stageOf(pct) : 1;
+  frontEl.style.setProperty('--d', known ? (1 - pct / 100).toFixed(3) : '0');
+  frontEl.classList.toggle('stage-2', damageStage === 2);
+  frontEl.classList.toggle('stage-3', damageStage === 3);
+  $('stageTag').textContent = damageStage === 3 ? 'On the ropes' : damageStage === 2 ? 'Battle-worn' : '';
+  const trail = $('hpTrail');
+  if (!known) { trail.style.width = '0%'; return; }
+  // Only play the hit where it can be seen; the back keeps it for later.
+  const frontShown = !cardEl.classList.contains('is-flipped') && document.visibilityState === 'visible';
+  const fight = String(state.fight_id || state.boss_name || '');
+  const seen = readSeen();
+  if (!frontShown) {
+    if (!seen || seen.fight !== fight) trail.style.width = pct + '%';
+    return;
+  }
+  if (seen && seen.fight === fight && cur < seen.hp) {
+    trail.style.transition = 'none';
+    trail.style.width = Math.min(100, seen.hp / max * 100) + '%';
+    void trail.offsetWidth;
+    trail.style.transition = '';
+    trail.style.width = pct + '%';
+    playHit(Math.round(seen.hp - cur));
+  } else {
+    trail.style.width = pct + '%';
+  }
+  writeSeen(fight, cur);
+  startEmbers();
+}
+function playHit(damage) {
+  if (!reduceMotion()) {
+    frontEl.classList.remove('shake'); void frontEl.offsetWidth; frontEl.classList.add('shake');
+    const flash = $('flash');
+    flash.classList.remove('go'); void flash.offsetWidth; flash.classList.add('go');
+  }
+  const pop = document.createElement('div');
+  pop.className = 'pop big';
+  pop.textContent = '−' + damage.toLocaleString();
+  frontEl.append(pop);
+  setTimeout(() => pop.remove(), 1200);
+}
+frontEl.addEventListener('animationend', event => { if (event.animationName === 'shake') frontEl.classList.remove('shake'); });
+
+// Embers: a few sparks when battle-worn, a steady rise when on the ropes.
+const embersCanvas = $('embers');
+const embersCtx = embersCanvas.getContext('2d');
+const embers = [];
+let embersRunning = false;
+function sizeEmbers() {
+  const rect = frontEl.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+  embersCanvas.width = Math.round(rect.width * dpr);
+  embersCanvas.height = Math.round(rect.height * dpr);
+  embersCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+if (window.ResizeObserver) new ResizeObserver(sizeEmbers).observe(frontEl); else sizeEmbers();
+function startEmbers() {
+  if (embersRunning || damageStage < 2 || reduceMotion()) return;
+  embersRunning = true;
+  requestAnimationFrame(tickEmbers);
+}
+function tickEmbers() {
+  const dpr = window.devicePixelRatio || 1;
+  const w = embersCanvas.width / dpr, h = embersCanvas.height / dpr;
+  const idle = document.visibilityState !== 'visible' || cardEl.classList.contains('is-flipped');
+  const rate = idle ? 0 : damageStage === 3 ? .45 : damageStage === 2 ? .06 : 0;
+  if (Math.random() < rate) embers.push({ x: Math.random() * w, y: h + 4, vx: (Math.random() - .5) * .5, vy: -(.6 + Math.random() * 1.2), life: 1, r: .8 + Math.random() * 1.8 });
+  embersCtx.clearRect(0, 0, w, h);
+  embersCtx.shadowColor = 'rgba(255,90,30,.9)';
+  embersCtx.shadowBlur = 8;
+  for (let i = embers.length - 1; i >= 0; i--) {
+    const e = embers[i];
+    e.x += e.vx + Math.sin(e.y / 30) * .25; e.y += e.vy; e.life -= .006;
+    if (e.life <= 0 || e.y < -10) { embers.splice(i, 1); continue; }
+    embersCtx.beginPath();
+    embersCtx.fillStyle = `rgba(255,${120 + Math.floor(e.life * 90)},60,${e.life * .9})`;
+    embersCtx.arc(e.x, e.y, e.r, 0, Math.PI * 2);
+    embersCtx.fill();
+  }
+  // Stop drawing once nothing is left to show; renderDamage restarts it.
+  if (rate === 0 && !embers.length) { embersRunning = false; return; }
+  requestAnimationFrame(tickEmbers);
+}
+
 monitorVideoLoop();
 refreshDashboard();
 setInterval(refreshDashboard, REFRESH_MS);
