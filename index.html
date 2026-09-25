@@ -51,7 +51,7 @@ body{width:100vw;height:100vh;height:100dvh}
 .hero-hp{font-size:11px;font-weight:800;color:#ffd0d0;font-variant-numeric:tabular-nums}
 .back .hero-track{margin-top:4px;height:4px}
 .hero-fill{background:linear-gradient(90deg,#ff8f8f,#ffd0d0)}
-.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:12px;padding:3px;border-radius:11px;background:rgba(255,255,255,.06)}
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:12px;padding:3px;border-radius:11px;background:rgba(255,255,255,.06)}
 .tab{border:0;margin:0;padding:7px 0;border-radius:8px;background:transparent;color:var(--dim);font:inherit;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;cursor:pointer}
 .tab[aria-selected="true"]{background:rgba(255,255,255,.12);color:#fff}
 .panel{flex:1;min-height:0;display:flex;flex-direction:column}
@@ -68,7 +68,7 @@ body{width:100vw;height:100vh;height:100dvh}
 .tile-top{display:flex;align-items:center;gap:6px;min-width:0}
 .tile-name{flex:1;min-width:0;font-size:12.5px;font-weight:800;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tile-sub{display:flex;align-items:center;justify-content:space-between;gap:6px;min-width:0}
-.tile-since{min-width:0;font-size:10px;font-weight:700;color:var(--dim);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile-since{flex:1;min-width:0;font-size:10px;font-weight:700;color:var(--dim);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tile-since b{font-weight:850;color:var(--muted)}
 .tile.hero .tile-since b{color:#ffd0d0}
 .tile-last{min-width:0;font-size:10.5px;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -143,6 +143,12 @@ body{width:100vw;height:100vh;height:100dvh}
 .ko[hidden]{display:none}
 .tile.ko-sure .ko{background:#ffd35a;color:#1a1200;border-color:#ffd35a}
 .tile.ko-maybe,.tile.ko-sure{--tier:#ffd35a;border-color:rgba(255,211,90,.55);box-shadow:0 0 14px rgba(255,211,90,.18)}
+/* Streak: consecutive days with a hit. Lit once today's is in, dashed while it
+   still needs today's hit, and glowing once it pays a damage bonus (3+ days). */
+.streak{flex:none;padding:0 4px;border-radius:5px;font-size:9px;line-height:13px;font-weight:900;color:#ffb547;background:rgba(255,140,40,.12);border:1px solid rgba(255,160,60,.4);font-variant-numeric:tabular-nums;white-space:nowrap}
+.streak[hidden]{display:none}
+.streak.risk{opacity:.6;border-style:dashed}
+.streak.paying{color:#1a1000;background:linear-gradient(90deg,#ffd35a,#ff9f1c);border-color:transparent;box-shadow:0 0 10px rgba(255,160,40,.45)}
 /* Training header: power level, form and this week, from the Strava effort scores */
 .power{margin:10px 0 0;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:linear-gradient(120deg,rgba(125,255,176,.06),rgba(255,255,255,.02))}
 .power[hidden]{display:none}
@@ -204,6 +210,23 @@ body{width:100vw;height:100vh;height:100dvh}
 .lore-text{margin:14px 0 0;font-size:15px;font-weight:500;line-height:1.6;color:var(--muted)}
 .lore-facts{display:flex;flex-wrap:wrap;gap:6px;margin-top:18px}
 .lore-facts span{padding:5px 9px;border:1px solid var(--line);border-radius:999px;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+
+/* Hall of Fame: every boss beaten in combat, newest first */
+.hall{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:12px 0}
+.hall-sum{margin:0 2px 10px;font-size:9px;font-weight:850;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.hall-sum b{color:#ffd35a}
+.hall-list{margin:0;padding:0;list-style:none;display:grid;gap:8px}
+.trophy{display:grid;grid-template-columns:66px 1fr;gap:12px;padding:8px;border:1px solid rgba(255,211,90,.22);border-radius:14px;background:linear-gradient(120deg,rgba(255,211,90,.08),rgba(255,255,255,.02) 55%)}
+.trophy-img{width:66px;height:88px;border-radius:9px;object-fit:cover;background:rgba(255,255,255,.06);box-shadow:0 0 0 1px rgba(255,211,90,.35)}
+.trophy-body{min-width:0;display:flex;flex-direction:column;gap:3px;padding-top:2px}
+.trophy-top{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.trophy-name{min-width:0;font-size:16px;font-weight:900;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.trophy-lv{flex:none;font-size:9px;font-weight:850;letter-spacing:.12em;text-transform:uppercase;color:#ffd35a}
+.trophy-epithet{font-size:9.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#ffb547}
+.trophy-epithet:empty{display:none}
+.trophy-stats{margin-top:3px;font-size:11px;font-weight:750;color:var(--muted);font-variant-numeric:tabular-nums}
+.trophy-line{font-size:10.5px;font-weight:700;color:var(--dim)}
+.trophy-line b{color:var(--muted);font-weight:850}
 @media(prefers-reduced-motion:reduce){.victory{animation:none;opacity:1}.v-btn,.v-orb{animation:none}}
 
 /* Damage overlay: the front shows how hurt the boss is. --d runs from 0 at
@@ -291,6 +314,7 @@ body{width:100vw;height:100vh;height:100dvh}
 <button class="tab" type="button" role="tab" id="tabAttack" aria-controls="panelAttack" aria-selected="true">Attack</button>
 <button class="tab" type="button" role="tab" id="tabLog" aria-controls="panelLog" aria-selected="false">Log</button>
 <button class="tab" type="button" role="tab" id="tabLore" aria-controls="panelLore" aria-selected="false">Lore</button>
+<button class="tab" type="button" role="tab" id="tabHall" aria-controls="panelHall" aria-selected="false">Hall</button>
 </div>
 <div class="panel" id="panelAttack" role="tabpanel" aria-labelledby="tabAttack">
 <div class="pad" id="pad">
@@ -330,6 +354,13 @@ body{width:100vw;height:100vh;height:100dvh}
 <div class="lore-facts" id="loreFacts"></div>
 </div>
 <div class="hint">Tap to flip back</div>
+</div>
+<div class="panel" id="panelHall" role="tabpanel" aria-labelledby="tabHall" hidden>
+<div class="hall">
+<div class="hall-sum" id="hallSum"></div>
+<ul class="hall-list" id="hallList"></ul>
+</div>
+<div class="hint">Every boss you beat hangs here</div>
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 </section>
@@ -428,7 +459,7 @@ cardEl.addEventListener('keydown', event => {
 });
 cardEl.addEventListener('contextmenu', event => event.preventDefault());
 
-const TABS = ['attack', 'log', 'lore'];
+const TABS = ['attack', 'log', 'lore', 'hall'];
 function showTab(name) {
   const shown = TABS.includes(name) ? name : 'attack';
   for (const tab of TABS) {
@@ -442,6 +473,7 @@ function showTab(name) {
 $('tabAttack').addEventListener('click', () => showTab('attack'));
 $('tabLog').addEventListener('click', () => showTab('log'));
 $('tabLore').addEventListener('click', () => showTab('lore'));
+$('tabHall').addEventListener('click', () => showTab('hall'));
 try { showTab(localStorage.getItem(TAB_KEY) || 'attack'); } catch (_) { showTab('attack'); }
 
 let logFilter = 'all';
@@ -535,7 +567,7 @@ function buildTile(habit) {
   tile.className = 'tile' + (habit.effect === 'Hero HP' ? ' hero' : '') + (groupOf(habit) === 'workout' ? ' workout' : '');
   tile.dataset.key = habit.key;
   tile.innerHTML = '<span class="tile-ic"></span><span class="tile-body"><span class="tile-top"><span class="tile-name"></span><span class="ko" hidden>KO</span></span>'
-    + '<span class="tile-sub"><span class="tile-since"><b></b> <span></span></span><span class="meter" hidden><i></i><i></i><i></i></span></span>'
+    + '<span class="tile-sub"><span class="tile-since"><b></b> <span></span></span><span class="streak" hidden></span><span class="meter" hidden><i></i><i></i><i></i></span></span>'
     + '<span class="tile-last" hidden></span></span><span class="charge"></span>';
   attachHold(tile);
   return tile;
@@ -571,9 +603,22 @@ function updateTile(tile, habit) {
   tile.classList.toggle('ko-maybe', ko === 'maybe');
   tile.querySelector('.ko').hidden = !ko;
   tile.querySelector('.ko').textContent = ko === 'maybe' ? 'KO?' : 'KO';
+  const streak = streakOf(habit);
+  const chip = tile.querySelector('.streak');
+  chip.hidden = !streak;
+  if (streak) {
+    // Room for the chip on a half-width tile: "6h 🔥4" rather than "6h ago".
+    if (unit.textContent === 'ago') unit.textContent = '';
+    chip.textContent = '🔥' + streak.days;
+    chip.classList.toggle('risk', !streak.today);
+    chip.classList.toggle('paying', streak.today && streak.bonus > 0);
+  }
   const label = habit.name + (hero ? ', ' + (ago === null ? 'no slips yet' : ago + ' clean') : ', ' + (ago === null ? 'not done yet' : ago + ' ago'));
   const dmgLabel = dmg ? (hero ? ', costs you ' : ', hits for ') + dmg.min + ' to ' + dmg.max + (ko === 'sure' ? ', finishes the boss' : ko === 'maybe' ? ', can finish the boss' : '') : '';
-  tile.setAttribute('aria-label', label + dmgLabel + '. Hold to log.');
+  const streakLabel = !streak ? '' : ', ' + streak.days + '-day streak' + (streak.today
+    ? (streak.bonus ? ', +' + streak.bonus + '% damage' : '')
+    : ', hit today to keep it' + (streak.next ? ' for +' + streak.next + '%' : ''));
+  tile.setAttribute('aria-label', label + dmgLabel + streakLabel + '. Hold to log.');
 }
 setInterval(() => { if (cardEl.classList.contains('is-flipped')) renderTiles(); }, 30000);
 
@@ -587,6 +632,18 @@ function damageOf(habit) {
   const mult = Number(habit.effect === 'Hero HP' ? latestState && latestState.hero_multiplier : latestState && latestState.power_multiplier) || 1;
   const base = max / mult;
   return { min, max, tier: base <= 15 ? 1 : base <= 32 ? 2 : 3 };
+}
+// Streak: consecutive game days with a hit of this habit (Battle keeps count).
+// It is alive while the last one was today or yesterday; the bonus tiers match
+// Battle's: +10% from 3 days, +20% from 5, +30% from 7.
+function streakBonus(days) { return days >= 7 ? 30 : days >= 5 ? 20 : days >= 3 ? 10 : 0; }
+function streakOf(habit) {
+  const days = Number(habit.streak) || 0;
+  if (habit.effect === 'Hero HP' || days < 2 || !habit.streak_day) return null;
+  const now = Date.now();
+  if (habit.streak_day === dayKey(now)) return { days, today: true, bonus: streakBonus(days) };
+  if (habit.streak_day === dayKey(now - 86400000)) return { days, today: false, next: streakBonus(days + 1) };
+  return null;
 }
 // Battle never lets the first hit on a full-HP boss finish it.
 function koOf(dmg) {
@@ -750,13 +807,15 @@ async function attack(tile) {
     tile.classList.remove('is-busy');
   }
 }
-function withHabitTime(state, key, at) {
+// Battle's reply carries the habit's new streak, so the chip updates at once.
+function withHabitTime(state, key, at, result) {
   const next = Object.assign({}, state);
-  next.habits = (state.habits || []).map(h => h.key === key ? Object.assign({}, h, { last_attack: at }) : h);
+  const streak = result && result.streak_day ? { streak: Number(result.streak) || 0, streak_day: result.streak_day } : {};
+  next.habits = (state.habits || []).map(h => h.key === key ? Object.assign({}, h, { last_attack: at }, streak) : h);
   return next;
 }
 function withHit(state, result, key) {
-  const next = withHabitTime(state, key, result.occurred_at);
+  const next = withHabitTime(state, key, result.occurred_at, result);
   next.current_hp = Number(result.hp_after);
   if (Number(result.defeated) === 1) {
     next.status = 'Defeated';
@@ -766,7 +825,11 @@ function withHit(state, result, key) {
   if (result.hp_max) next.max_hp = Number(result.hp_max);
   const id = String(result.event_id || '').replace(/-/g, '');
   const log = (state.log || []).filter(hit => hit.id !== id);
-  log.unshift({ id, kind: 'boss', at: result.occurred_at, habit: result.habit, damage: Number(result.damage) || 0, crit: result.critical ? 1 : 0, hp_after: Number(result.hp_after) });
+  const entry = { id, kind: 'boss', at: result.occurred_at, habit: result.habit, damage: Number(result.damage) || 0, crit: result.critical ? 1 : 0 };
+  if (Number(result.form_bonus) > 1) entry.form_bonus = Number(result.form_bonus);
+  if (Number(result.streak_hit) >= 3) entry.streak = Number(result.streak_hit);
+  entry.hp_after = Number(result.hp_after);
+  log.unshift(entry);
   next.log = log;
   return next;
 }
@@ -1053,6 +1116,7 @@ function appendHitRow(hit) {
   if (hit.special) boosts.push(hit.special);
   if (hit.effort) boosts.push('×' + hit.effort + ' effort');
   if (hit.form_bonus) boosts.push('+' + Math.round((hit.form_bonus - 1) * 100) + '% form');
+  if (hit.streak) boosts.push('🔥' + hit.streak + '-day +' + streakBonus(hit.streak) + '%');
   when.textContent = formatWhen(hit.at) + (boosts.length ? ' · ' + boosts.join(' · ') : '');
   const dmg = document.createElement('div');
   dmg.className = 'hit-dmg';
@@ -1102,6 +1166,7 @@ function renderState(state) {
   renderPower(state);
   renderVictory(state);
   renderLore(state);
+  renderHall(state);
   const heroMax = Number(state.hero_max_hp);
   const heroShown = heroMax > 0 && state.hero_hp != null;
   $('heroLine').hidden = !heroShown;
@@ -1257,6 +1322,68 @@ function renderLore(state) {
     span.textContent = fact;
     return span;
   }));
+}
+
+// Hall of Fame: one trophy per boss beaten in combat (Claim Victory writes the
+// stats), with a still from its video. Rebuilt only when the list changes, so
+// the 15-second refresh does not reload the portraits.
+const hallDate = new Intl.DateTimeFormat('en-GB', { timeZone: TIME_ZONE, day: 'numeric', month: 'short' });
+let hallSignature = '';
+function fightLength(startIso, endIso) {
+  const ms = Date.parse(endIso || '') - Date.parse(startIso || '');
+  if (!(ms > 0)) return '';
+  const days = ms / 86400000;
+  return days < 1 ? Math.max(1, Math.round(ms / 3600000)) + ' h' : (Math.round(days * 10) / 10) + (days < 1.05 ? ' day' : ' days');
+}
+function renderHall(state) {
+  const hall = Array.isArray(state.hall) ? state.hall : [];
+  const signature = JSON.stringify(hall);
+  if (signature === hallSignature) return;
+  hallSignature = signature;
+  const sum = $('hallSum');
+  sum.replaceChildren();
+  if (hall.length) {
+    const count = document.createElement('b');
+    count.textContent = hall.length;
+    const hits = hall.reduce((total, t) => total + (Number(t.hits) || 0), 0);
+    sum.append(count, (hall.length === 1 ? ' boss beaten' : ' bosses beaten') + ' · ' + hits.toLocaleString() + ' hits');
+  }
+  const list = $('hallList');
+  list.replaceChildren();
+  if (!hall.length) {
+    const empty = document.createElement('li');
+    empty.className = 'empty';
+    empty.textContent = 'No trophies yet. Beat a boss to hang it here.';
+    list.append(empty);
+    return;
+  }
+  for (const t of hall) list.append(buildTrophy(t));
+}
+function buildTrophy(t) {
+  const el = (tag, cls, text) => { const node = document.createElement(tag); node.className = cls; if (text != null) node.textContent = text; return node; };
+  const line = (label, value, extra) => {
+    const node = el('div', 'trophy-line');
+    const b = document.createElement('b');
+    b.textContent = value;
+    node.append(label + ' ', b, extra ? ' · ' + extra : '');
+    return node;
+  };
+  const item = el('li', 'trophy');
+  const img = el('img', 'trophy-img');
+  img.alt = (t.name || 'Boss') + ' portrait';
+  img.loading = 'lazy';
+  if (t.portrait) img.src = t.portrait;
+  const body = el('div', 'trophy-body');
+  const top = el('div', 'trophy-top');
+  top.append(el('span', 'trophy-name', t.name || 'Boss'), el('span', 'trophy-lv', t.level ? 'Lv ' + t.level : ''));
+  body.append(top, el('div', 'trophy-epithet', t.epithet || ''));
+  const stats = [fightLength(t.started_at, t.defeated_at), (Number(t.hits) || 0) + ' hits', (Number(t.crits) || 0) + (Number(t.crits) === 1 ? ' crit' : ' crits')].filter(Boolean);
+  body.append(el('div', 'trophy-stats', stats.join(' · ')));
+  if (Number(t.best_hit) > 0) body.append(line('Best hit', String(t.best_hit), t.best_hit_habit || ''));
+  const defeated = Date.parse(t.defeated_at || '');
+  if (t.final_blow) body.append(line('Final blow', t.final_blow, isNaN(defeated) ? '' : hallDate.format(new Date(defeated))));
+  item.append(img, body);
+  return item;
 }
 
 let claimBusy = false;
