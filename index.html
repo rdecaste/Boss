@@ -112,6 +112,31 @@ body{width:100vw;height:100vh;height:100dvh}
 .toast.is-shown{opacity:1;transform:none}
 .toast.is-error{border-color:rgba(255,95,95,.5)}
 
+/* Attack tiles show what a hit does right now. Tier comes from the habit's
+   base damage (before the level multiplier): light, medium, heavy. */
+.tile-dmg{display:flex;align-items:center;gap:5px;margin-top:5px;font-size:11px;font-weight:850;letter-spacing:-.01em;font-variant-numeric:tabular-nums;color:var(--tier,var(--dim))}
+.tile-dmg[hidden]{display:none}
+.pips{display:inline-flex;gap:2px}
+.pips i{display:block;width:3px;height:9px;border-radius:1px;background:rgba(255,255,255,.14)}
+.tile.t1 .pips i:nth-child(-n+1),.tile.t2 .pips i:nth-child(-n+2),.tile.t3 .pips i:nth-child(-n+3){background:var(--tier)}
+.tile.t1{--tier:#8fc3ff;background:rgba(120,180,255,.06);border-color:rgba(120,180,255,.16);box-shadow:inset 3px 0 0 var(--tier)}
+.tile.t2{--tier:#ffb547;background:rgba(255,170,60,.07);border-color:rgba(255,170,60,.2);box-shadow:inset 3px 0 0 var(--tier)}
+.tile.t3{--tier:#ff6a3d;background:linear-gradient(160deg,rgba(255,106,61,.14),rgba(255,106,61,.04));border-color:rgba(255,106,61,.32);box-shadow:inset 3px 0 0 var(--tier),0 0 14px rgba(255,106,61,.12)}
+.tile.hero.t1{--tier:#ffb0b0;background:rgba(255,95,95,.05);border-color:rgba(255,95,95,.14)}
+.tile.hero.t2{--tier:#ff8080;background:rgba(255,95,95,.08);border-color:rgba(255,95,95,.22)}
+.tile.hero.t3{--tier:#ff4d4d;background:linear-gradient(160deg,rgba(255,60,60,.16),rgba(255,60,60,.05));border-color:rgba(255,60,60,.34);box-shadow:inset 3px 0 0 var(--tier),0 0 14px rgba(255,60,60,.12)}
+.tile.fresh{border-color:rgba(255,159,28,.55)}
+/* KO: this attack can finish the boss (solid: every roll does, outline: a good roll does) */
+.ko{position:absolute;top:6px;right:6px;padding:1px 5px;border-radius:5px;font-size:9px;font-weight:900;letter-spacing:.08em;color:#ffd35a;border:1px solid rgba(255,211,90,.7);background:rgba(20,16,4,.6)}
+.ko[hidden]{display:none}
+.tile.ko-sure .ko{background:#ffd35a;color:#1a1200;border-color:#ffd35a}
+.tile.ko-maybe,.tile.ko-sure{border-color:rgba(255,211,90,.6);box-shadow:inset 3px 0 0 #ffd35a,0 0 16px rgba(255,211,90,.22)}
+.tile.ko-maybe .tile-name,.tile.ko-sure .tile-name{padding-right:26px}
+.power{display:flex;flex-wrap:wrap;gap:4px 10px;margin:10px 2px 0;font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+.power b{color:#ffb547;font-weight:900}
+.power[hidden]{display:none}
+.front .power-mult{margin-top:3px;font-size:9px;font-weight:850;letter-spacing:.1em;color:#ffb547;text-shadow:0 1px 4px rgba(0,0,0,.85)}
+
 /* Damage overlay: the front shows how hurt the boss is. --d runs from 0 at
    full HP to 1 at 0 HP; stage-2 is 26-60% HP, stage-3 is 25% or less. */
 .fx{position:absolute;inset:0;pointer-events:none}
@@ -164,7 +189,7 @@ body{width:100vw;height:100vh;height:100dvh}
 <div class="fx fx-flash" id="flash"></div>
 <div class="hud-top">
 <div class="metric"><div class="label">Boss</div><div class="value boss-name" id="bossName">—</div></div>
-<div class="metric right"><div class="label">Level</div><div class="value level-num" id="level">—</div></div>
+<div class="metric right"><div class="label">Level</div><div class="value level-num" id="level">—</div><div class="power-mult" id="powerMult"></div></div>
 </div>
 <div class="hud-bottom" id="hpHud" hidden>
 <div class="hp-head"><span class="label">HP</span><span class="stage-tag" id="stageTag"></span><span class="hp-num" id="hpNum">—</span></div>
@@ -182,6 +207,7 @@ body{width:100vw;height:100vh;height:100dvh}
 </div>
 <div class="panel" id="panelAttack" role="tabpanel" aria-labelledby="tabAttack">
 <div class="pad" id="pad">
+<div class="power" id="power" hidden></div>
 <div class="label group-label">Good habits</div>
 <div class="tiles" id="goodTiles"></div>
 <div class="label group-label">Bad habits</div>
@@ -405,7 +431,7 @@ function buildTile(habit) {
   tile.type = 'button';
   tile.className = 'tile' + (habit.effect === 'Hero HP' ? ' hero' : '') + (groupOf(habit) === 'workout' ? ' workout' : '');
   tile.dataset.key = habit.key;
-  tile.innerHTML = '<div class="tile-name"></div><div class="tile-since"><b></b><span></span></div><div class="charge"></div>';
+  tile.innerHTML = '<div class="tile-name"></div><div class="tile-dmg" hidden><span class="pips"><i></i><i></i><i></i></span><span class="dmg-num"></span></div><div class="tile-since"><b></b><span></span></div><span class="ko" hidden>KO</span><div class="charge"></div>';
   attachHold(tile);
   return tile;
 }
@@ -426,10 +452,57 @@ function updateTile(tile, habit) {
   }
   const fresh = done.at && Date.now() - Date.parse(done.at) < FRESH_MS;
   tile.classList.toggle('fresh', !!fresh && !hero);
+  const dmg = damageOf(habit);
+  const dmgEl = tile.querySelector('.tile-dmg');
+  dmgEl.hidden = !dmg;
+  tile.classList.remove('t1', 't2', 't3');
+  let ko = '';
+  if (dmg) {
+    tile.classList.add('t' + dmg.tier);
+    tile.querySelector('.dmg-num').textContent = (hero ? '−' : '') + (dmg.min === dmg.max ? dmg.min : dmg.min + '–' + dmg.max);
+    if (!hero) ko = koOf(dmg);
+  }
+  tile.classList.toggle('ko-sure', ko === 'sure');
+  tile.classList.toggle('ko-maybe', ko === 'maybe');
+  tile.querySelector('.ko').hidden = !ko;
+  tile.querySelector('.ko').textContent = ko === 'maybe' ? 'KO?' : 'KO';
   const label = habit.name + (hero ? ', ' + (ago === null ? 'no slips yet' : ago + ' clean') : ', ' + (ago === null ? 'not done yet' : ago + ' ago'));
-  tile.setAttribute('aria-label', label + '. Hold to log.');
+  const dmgLabel = dmg ? (hero ? ', costs you ' : ', hits for ') + dmg.min + ' to ' + dmg.max + (ko === 'sure' ? ', finishes the boss' : ko === 'maybe' ? ', can finish the boss' : '') : '';
+  tile.setAttribute('aria-label', label + dmgLabel + '. Hold to log.');
 }
 setInterval(() => { if (cardEl.classList.contains('is-flipped')) renderTiles(); }, 30000);
+
+// The publisher sends each habit's damage at the current level (Battle's
+// multiplier already applied). Tier is judged on the base damage so it stays
+// put as the multiplier grows: up to 14 light, up to 30 medium, above heavy.
+function damageOf(habit) {
+  const min = Number(habit.dmg_min), max = Number(habit.dmg_max);
+  if (habit.dmg_min == null || habit.dmg_max == null || !isFinite(min) || !isFinite(max)) return null;
+  const mult = Number(habit.effect === 'Hero HP' ? latestState && latestState.hero_multiplier : latestState && latestState.power_multiplier) || 1;
+  const base = max / mult;
+  return { min, max, tier: base <= 14 ? 1 : base <= 30 ? 2 : 3 };
+}
+// Battle never lets the first hit on a full-HP boss finish it.
+function koOf(dmg) {
+  const s = latestState || {};
+  const cur = Number(s.current_hp), max = Number(s.max_hp);
+  if (s.status !== 'Active' || !(cur > 0) || !(max > 0) || cur >= max) return '';
+  if (dmg.min >= cur) return 'sure';
+  if (dmg.max >= cur) return 'maybe';
+  return '';
+}
+function renderPower(state) {
+  const mult = Number(state.power_multiplier);
+  const shown = mult > 0;
+  $('power').hidden = !shown;
+  $('powerMult').textContent = shown ? '×' + mult.toFixed(2) + ' power' : '';
+  if (!shown) return;
+  const gap = Math.max(0, Number(state.hero_level) - Number(state.boss_level || state.hero_level));
+  const parts = ['<span>Lv ' + Number(state.hero_level) + '</span>', '<span><b>×' + mult.toFixed(2) + '</b> power</span>'];
+  if (state.crit_chance != null) parts.push('<span>' + Math.round(Number(state.crit_chance) * 100) + '% crit ×1.5</span>');
+  if (gap > 0) parts.push('<span>outlevel +' + gap + '</span>');
+  $('power').innerHTML = parts.join('');
+}
 
 function attachHold(tile) {
   let timer = null, startX = 0, startY = 0, pointerId = null;
@@ -841,6 +914,7 @@ function renderState(state) {
     $('scHp').textContent = '';
   }
   renderDamage(state);
+  renderPower(state);
   const heroMax = Number(state.hero_max_hp);
   const heroShown = heroMax > 0 && state.hero_hp != null;
   $('heroLine').hidden = !heroShown;
