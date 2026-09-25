@@ -1172,6 +1172,20 @@ function withoutHit(state, id, result) {
     log[i].hp_after = hp;
   }
   next.log = log;
+  // Revert replies with the habit's rolled-back time and streak, so the tile's
+  // "time since" and streak chip go back at once. An empty streak day means the
+  // habit keeps no streak (weekly, bad habits); 'none' means no hits are left.
+  const key = String(result.habit_key || '');
+  if (key && result.habit_last_attack != null) {
+    const gone = result.habit_last_attack === 'none';
+    const day = String(result.habit_streak_day || '');
+    next.habits = (state.habits || []).map(h => {
+      if (h.key !== key) return h;
+      const habit = Object.assign({}, h, { last_attack: gone ? null : result.habit_last_attack });
+      if (day) Object.assign(habit, day === 'none' ? { streak: 0, streak_day: null } : { streak: Number(result.habit_streak) || 0, streak_day: day });
+      return habit;
+    });
+  }
   return next;
 }
 function closeRow(row) {
