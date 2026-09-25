@@ -58,21 +58,32 @@ body{width:100vw;height:100vh;height:100dvh}
 .panel[hidden],.tiles[hidden],.group-label[hidden],.hero-line[hidden],.hp-track[hidden]{display:none}
 .pad{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding-bottom:12px}
 .group-label{margin:12px 2px 6px}
-.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
-.tile{position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;min-height:66px;padding:8px 8px 7px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.04);color:var(--text);font:inherit;text-align:left;cursor:pointer;touch-action:pan-y;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
-.tile.hero{background:rgba(255,95,95,.06);border-color:rgba(255,95,95,.16)}
-.tile.workout{background:rgba(90,170,255,.06);border-color:rgba(90,170,255,.18)}
-.tile-name{font-size:12px;font-weight:750;line-height:1.15;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.tile-since{margin-top:6px;display:flex;align-items:baseline;gap:4px;font-variant-numeric:tabular-nums}
-.tile-since b{font-size:16px;font-weight:850;letter-spacing:-.02em}
-.tile-since span{font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--dim)}
-.tile.fresh{border-color:rgba(255,159,28,.55);box-shadow:0 0 0 1px rgba(255,159,28,.25) inset}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+/* Move list: habits two to a row, workouts full width with their last session. */
+#workoutTiles{grid-template-columns:1fr}
+.tile{position:relative;overflow:hidden;display:grid;grid-template-columns:32px 1fr;align-items:center;gap:9px;width:100%;min-height:52px;padding:7px 10px 7px 8px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.035);color:var(--text);font:inherit;text-align:left;cursor:pointer;touch-action:pan-y;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+.tile::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--tier,var(--line))}
+.tile-ic{display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:var(--tier-bg,rgba(255,255,255,.08));font-size:16px;line-height:1}
+.tile-body{min-width:0;display:flex;flex-direction:column;gap:3px}
+.tile-top{display:flex;align-items:center;gap:6px;min-width:0}
+.tile-name{flex:1;min-width:0;font-size:12.5px;font-weight:800;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile-sub{display:flex;align-items:center;justify-content:space-between;gap:6px;min-width:0}
+.tile-since{min-width:0;font-size:10px;font-weight:700;color:var(--dim);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile-since b{font-weight:850;color:var(--muted)}
 .tile.hero .tile-since b{color:#ffd0d0}
-.tile .charge{position:absolute;left:0;bottom:0;height:3px;width:0;background:linear-gradient(90deg,var(--hot),var(--warm))}
+.tile-last{min-width:0;font-size:10.5px;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile-last[hidden]{display:none}
+.tile-last .lvl{color:var(--tier)}
+.tile-last .sp{margin-left:5px;padding:1px 5px;border-radius:5px;background:rgba(255,211,90,.18);color:#ffd35a;font-size:8.5px;font-weight:900;letter-spacing:.06em;text-transform:uppercase}
+.tile.fresh{border-color:rgba(255,159,28,.55);box-shadow:0 0 0 1px rgba(255,159,28,.25) inset}
+.tile .charge{position:absolute;top:0;bottom:0;left:0;width:0;background:linear-gradient(90deg,transparent,var(--tier,var(--warm)));opacity:.3;pointer-events:none}
 .tile.is-charging .charge{width:100%;transition:width var(--hold-ms) linear}
-.tile.is-charging{transform:scale(.97);transition:transform 120ms ease}
+.tile.is-charging{transform:scale(.98);transition:transform 120ms ease}
 .tile.is-busy{opacity:.6}
 .tile.is-busy .tile-since b::after{content:'…'}
+#workoutTiles .tile{grid-template-columns:38px 1fr;min-height:60px;padding:9px 12px 9px 9px}
+#workoutTiles .tile-ic{width:38px;height:38px;font-size:19px}
+#workoutTiles .tile-name{font-size:14px}
 .pop{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);font-size:22px;font-weight:900;letter-spacing:-.02em;color:var(--warm);text-shadow:0 2px 10px rgba(0,0,0,.8);pointer-events:none;animation:pop 1100ms ease-out forwards;white-space:nowrap}
 .pop.crit{color:var(--hot);font-size:26px}
 .pop.hurt{color:#ff8f8f}
@@ -112,29 +123,46 @@ body{width:100vw;height:100vh;height:100dvh}
 .toast.is-shown{opacity:1;transform:none}
 .toast.is-error{border-color:rgba(255,95,95,.5)}
 
-/* Attack tiles show how hard a hit lands: tier colour and 1-3 pips, from the
-   habit's base damage (before the level multiplier). No numbers on purpose. */
-.tile-dmg{display:flex;align-items:center;gap:5px;margin-top:5px;font-size:11px;font-weight:850;letter-spacing:-.01em;font-variant-numeric:tabular-nums;color:var(--tier,var(--dim))}
-.tile-dmg[hidden]{display:none}
-.pips{display:inline-flex;gap:2px}
-.pips i{display:block;width:3px;height:9px;border-radius:1px;background:rgba(255,255,255,.14)}
-.tile.t1 .pips i:nth-child(-n+1),.tile.t2 .pips i:nth-child(-n+2),.tile.t3 .pips i:nth-child(-n+3){background:var(--tier)}
-.tile.t1{--tier:#8fc3ff;background:rgba(120,180,255,.06);border-color:rgba(120,180,255,.16);box-shadow:inset 3px 0 0 var(--tier)}
-.tile.t2{--tier:#ffb547;background:rgba(255,170,60,.07);border-color:rgba(255,170,60,.2);box-shadow:inset 3px 0 0 var(--tier)}
-.tile.t3{--tier:#ff6a3d;background:linear-gradient(160deg,rgba(255,106,61,.14),rgba(255,106,61,.04));border-color:rgba(255,106,61,.32);box-shadow:inset 3px 0 0 var(--tier),0 0 14px rgba(255,106,61,.12)}
-.tile.hero.t1{--tier:#ffb0b0;background:rgba(255,95,95,.05);border-color:rgba(255,95,95,.14)}
-.tile.hero.t2{--tier:#ff8080;background:rgba(255,95,95,.08);border-color:rgba(255,95,95,.22)}
-.tile.hero.t3{--tier:#ff4d4d;background:linear-gradient(160deg,rgba(255,60,60,.16),rgba(255,60,60,.05));border-color:rgba(255,60,60,.34);box-shadow:inset 3px 0 0 var(--tier),0 0 14px rgba(255,60,60,.12)}
-.tile.fresh{border-color:rgba(255,159,28,.55)}
+/* Attack rows show how hard a hit lands: tier colour and a 3-segment meter,
+   from the habit's base damage (before the level multiplier). No numbers on purpose. */
+.meter{display:inline-flex;gap:3px;flex:none}
+.meter[hidden]{display:none}
+.meter i{display:block;width:12px;height:5px;border-radius:2px;background:rgba(255,255,255,.12)}
+.tiles:not(#workoutTiles) .meter{gap:2px}
+.tiles:not(#workoutTiles) .meter i{width:8px}
+.tile.t1 .meter i:nth-child(-n+1),.tile.t2 .meter i:nth-child(-n+2),.tile.t3 .meter i:nth-child(-n+3){background:var(--tier);box-shadow:0 0 6px var(--tier-bg)}
+.tile.t1{--tier:#8fc3ff;--tier-bg:rgba(120,180,255,.18)}
+.tile.t2{--tier:#ffb547;--tier-bg:rgba(255,170,60,.2)}
+.tile.t3{--tier:#ff6a3d;--tier-bg:rgba(255,106,61,.24);background:linear-gradient(100deg,rgba(255,106,61,.1),rgba(255,255,255,.03) 60%)}
+.tile.hero{background:rgba(255,95,95,.05)}
+.tile.hero.t1{--tier:#ffb0b0;--tier-bg:rgba(255,95,95,.14)}
+.tile.hero.t2{--tier:#ff8080;--tier-bg:rgba(255,95,95,.2)}
+.tile.hero.t3{--tier:#ff4d4d;--tier-bg:rgba(255,60,60,.26);background:linear-gradient(100deg,rgba(255,60,60,.12),rgba(255,255,255,.03) 60%)}
 /* KO: this attack can finish the boss (solid: every roll does, outline: a good roll does) */
-.ko{position:absolute;top:6px;right:6px;padding:1px 5px;border-radius:5px;font-size:9px;font-weight:900;letter-spacing:.08em;color:#ffd35a;border:1px solid rgba(255,211,90,.7);background:rgba(20,16,4,.6)}
+.ko{flex:none;padding:1px 5px;border-radius:5px;font-size:9px;font-weight:900;letter-spacing:.08em;color:#ffd35a;border:1px solid rgba(255,211,90,.7);background:rgba(20,16,4,.6)}
 .ko[hidden]{display:none}
 .tile.ko-sure .ko{background:#ffd35a;color:#1a1200;border-color:#ffd35a}
-.tile.ko-maybe,.tile.ko-sure{border-color:rgba(255,211,90,.6);box-shadow:inset 3px 0 0 #ffd35a,0 0 16px rgba(255,211,90,.22)}
-.tile.ko-maybe .tile-name,.tile.ko-sure .tile-name{padding-right:26px}
-.power{display:flex;flex-wrap:wrap;gap:4px 10px;margin:10px 2px 0;font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
-.power b{color:#ffb547;font-weight:900}
+.tile.ko-maybe,.tile.ko-sure{--tier:#ffd35a;border-color:rgba(255,211,90,.55);box-shadow:0 0 14px rgba(255,211,90,.18)}
+/* Training header: power level, form and this week, from the Strava effort scores */
+.power{margin:10px 0 0;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:linear-gradient(120deg,rgba(125,255,176,.06),rgba(255,255,255,.02))}
 .power[hidden]{display:none}
+.pl-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.pl{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:20px;font-weight:800;letter-spacing:.02em;color:#7dffb0;text-shadow:0 0 12px rgba(125,255,176,.35);font-variant-numeric:tabular-nums;white-space:nowrap}
+.pl small{margin-left:6px;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:8px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);text-shadow:none}
+.form-chip{padding:3px 8px;border-radius:999px;font-size:10px;font-weight:850;letter-spacing:.04em;white-space:nowrap;background:rgba(255,255,255,.08);color:var(--dim)}
+.form-chip.steady{background:rgba(120,180,255,.16);color:#a9d2ff}
+.form-chip.building{background:rgba(125,255,176,.16);color:#7dffb0}
+.form-chip.overreaching{background:rgba(255,95,95,.18);color:#ff9a9a}
+.week{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;font-size:10.5px;font-weight:750;color:var(--muted)}
+.week > span:first-child{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dots{display:flex;gap:4px;flex:none}
+.dots i{display:grid;place-items:center;width:16px;height:16px;border-radius:50%;background:rgba(255,255,255,.06);font-style:normal;font-size:7.5px;font-weight:850;color:var(--dim)}
+.dots i.on{background:#7dffb0;color:#04210f}
+.dots i.today{box-shadow:0 0 0 1px rgba(255,255,255,.45)}
+.power-meta{display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:8px;font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+.power-meta b{color:#ffb547;font-weight:900}
+.power-note{font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+.power-note b{color:#ffb547;font-weight:900}
 .front .power-mult{margin-top:3px;font-size:9px;font-weight:850;letter-spacing:.1em;color:#ffb547;text-shadow:0 1px 4px rgba(0,0,0,.85)}
 
 /* Victory: the boss died in combat. Shown until the victory is claimed, then
@@ -506,7 +534,9 @@ function buildTile(habit) {
   tile.type = 'button';
   tile.className = 'tile' + (habit.effect === 'Hero HP' ? ' hero' : '') + (groupOf(habit) === 'workout' ? ' workout' : '');
   tile.dataset.key = habit.key;
-  tile.innerHTML = '<div class="tile-name"></div><div class="tile-dmg" hidden><span class="pips"><i></i><i></i><i></i></span></div><div class="tile-since"><b></b><span></span></div><span class="ko" hidden>KO</span><div class="charge"></div>';
+  tile.innerHTML = '<span class="tile-ic"></span><span class="tile-body"><span class="tile-top"><span class="tile-name"></span><span class="ko" hidden>KO</span></span>'
+    + '<span class="tile-sub"><span class="tile-since"><b></b> <span></span></span><span class="meter" hidden><i></i><i></i><i></i></span></span>'
+    + '<span class="tile-last" hidden></span></span><span class="charge"></span>';
   attachHold(tile);
   return tile;
 }
@@ -516,6 +546,8 @@ function updateTile(tile, habit) {
   const done = lastDone(habit);
   const ago = since(done.at);
   tile.querySelector('.tile-name').textContent = habit.name;
+  tile.querySelector('.tile-ic').textContent = habit.icon || (hero ? '⚠️' : '✨');
+  renderLastSession(tile.querySelector('.tile-last'), habit.last_session);
   const value = tile.querySelector('.tile-since b');
   const unit = tile.querySelector('.tile-since span');
   if (hero) {
@@ -528,8 +560,7 @@ function updateTile(tile, habit) {
   const fresh = done.at && Date.now() - Date.parse(done.at) < FRESH_MS;
   tile.classList.toggle('fresh', !!fresh && !hero);
   const dmg = damageOf(habit);
-  const dmgEl = tile.querySelector('.tile-dmg');
-  dmgEl.hidden = !dmg;
+  tile.querySelector('.meter').hidden = !dmg;
   tile.classList.remove('t1', 't2', 't3');
   let ko = '';
   if (dmg) {
@@ -566,17 +597,83 @@ function koOf(dmg) {
   if (dmg.max >= cur) return 'maybe';
   return '';
 }
+// A workout's last Strava session: distance, time and how its effort compared
+// with your recent average for that sport (from the upload's effort score).
+function renderLastSession(el, s) {
+  el.hidden = !s;
+  if (!s) return;
+  el.replaceChildren();
+  const bits = [];
+  if (Number(s.km) > 0) bits.push(Number(s.km).toLocaleString() + ' km');
+  if (Number(s.min) > 0) bits.push(formatMinutes(Number(s.min)));
+  el.append(bits.join(' · '));
+  if (s.effort != null) {
+    const lvl = document.createElement('span');
+    lvl.className = 'lvl';
+    lvl.textContent = (bits.length ? ' · ' : '') + '×' + Number(s.effort) + (s.level ? ' ' + s.level : '');
+    el.append(lvl);
+  }
+  if (s.special) {
+    const sp = document.createElement('span');
+    sp.className = 'sp';
+    sp.textContent = s.special;
+    el.append(sp);
+  }
+}
+function formatMinutes(total) {
+  const h = Math.floor(total / 60), m = Math.round(total % 60);
+  return h ? h + 'h' + (m ? ' ' + m + 'm' : '') : m + ' min';
+}
+const weekdayInitial = new Intl.DateTimeFormat('en-GB', { timeZone: TIME_ZONE, weekday: 'narrow' });
+// Training header: power level (fitness), form and its attack bonus, this
+// week's workouts as dots (oldest left, today right), then the level stats.
 function renderPower(state) {
   const mult = Number(state.power_multiplier);
-  const shown = mult > 0;
-  $('power').hidden = !shown;
-  $('powerMult').textContent = shown ? '×' + mult.toFixed(2) + ' power' : '';
-  if (!shown) return;
-  const gap = Math.max(0, Number(state.hero_level) - Number(state.boss_level || state.hero_level));
-  const parts = ['<span>Lv ' + Number(state.hero_level) + '</span>', '<span><b>×' + mult.toFixed(2) + '</b> power</span>'];
-  if (state.crit_chance != null) parts.push('<span>' + Math.round(Number(state.crit_chance) * 100) + '% crit ×1.5</span>');
-  if (gap > 0) parts.push('<span>outlevel +' + gap + '</span>');
-  $('power').innerHTML = parts.join('');
+  const t = state.training || null;
+  $('powerMult').textContent = mult > 0 ? '×' + mult.toFixed(2) + ' power' : '';
+  const box = $('power');
+  box.hidden = !(mult > 0 || t);
+  box.replaceChildren();
+  if (t) {
+    const row = document.createElement('div');
+    row.className = 'pl-row';
+    const pl = document.createElement('span');
+    pl.className = 'pl';
+    pl.textContent = Number(t.power_level || 0).toLocaleString();
+    const plLabel = document.createElement('small');
+    plLabel.textContent = 'power level';
+    pl.append(plLabel);
+    const chip = document.createElement('span');
+    chip.className = 'form-chip ' + String(t.form_state || 'Rusty').toLowerCase();
+    chip.textContent = (t.form_state || 'Rusty') + (t.form_bonus ? ' · +' + t.form_bonus + '% attacks' : '');
+    row.append(pl, chip);
+    const week = document.createElement('div');
+    week.className = 'week';
+    const w = t.week || {};
+    const summary = document.createElement('span');
+    summary.textContent = (w.count || 0) + (w.count === 1 ? ' workout' : ' workouts') + (w.minutes ? ' · ' + formatMinutes(w.minutes) : '') + ' this week';
+    const dots = document.createElement('span');
+    dots.className = 'dots';
+    const days = Array.isArray(w.days) ? w.days : [];
+    days.forEach((on, i) => {
+      const dot = document.createElement('i');
+      dot.className = (on ? 'on' : '') + (i === days.length - 1 ? ' today' : '');
+      dot.textContent = weekdayInitial.format(new Date(Date.now() - (days.length - 1 - i) * 86400000));
+      dots.append(dot);
+    });
+    week.append(summary, dots);
+    box.append(row, week);
+  }
+  if (mult > 0) {
+    const meta = document.createElement('div');
+    meta.className = 'power-meta';
+    const gap = Math.max(0, Number(state.hero_level) - Number(state.boss_level || state.hero_level));
+    const parts = ['<span>Lv ' + Number(state.hero_level) + '</span>', '<span><b>×' + mult.toFixed(2) + '</b> power</span>'];
+    if (state.crit_chance != null) parts.push('<span>' + Math.round(Number(state.crit_chance) * 100) + '% crit ×1.5</span>');
+    if (gap > 0) parts.push('<span>outlevel +' + gap + '</span>');
+    meta.innerHTML = parts.join('');
+    box.append(meta);
+  }
 }
 
 function attachHold(tile) {
@@ -951,7 +1048,12 @@ function appendHitRow(hit) {
   }
   const when = document.createElement('div');
   when.className = 'hit-when';
-  when.textContent = formatWhen(hit.at);
+  // Effort, special move and form, when they changed the hit.
+  const boosts = [];
+  if (hit.special) boosts.push(hit.special);
+  if (hit.effort) boosts.push('×' + hit.effort + ' effort');
+  if (hit.form_bonus) boosts.push('+' + Math.round((hit.form_bonus - 1) * 100) + '% form');
+  when.textContent = formatWhen(hit.at) + (boosts.length ? ' · ' + boosts.join(' · ') : '');
   const dmg = document.createElement('div');
   dmg.className = 'hit-dmg';
   dmg.textContent = '−' + (Number(hit.damage) || 0);
@@ -1134,7 +1236,7 @@ function renderVictory(state) {
     : summoning ? 'This card updates by itself when it arrives.' : 'Claiming summons the next challenger.';
   // The attack pad has nothing to hit until the next boss arrives.
   $('power').hidden = false;
-  $('power').innerHTML = summoning ? '<span><b>Next boss incoming</b></span>' : '<span><b>Boss defeated</b> · claim your victory on the front</span>';
+  $('power').innerHTML = summoning ? '<div class="power-note"><b>Next boss incoming</b></div>' : '<div class="power-note"><b>Boss defeated</b> · claim your victory on the front</div>';
 }
 // ---- Lore ----
 // Epithet and lore come from the fight's Boss Design in Notion.
