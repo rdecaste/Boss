@@ -59,8 +59,19 @@ body{width:100vw;height:100vh;height:100dvh}
 .pad{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding-bottom:12px}
 .group-label{margin:12px 2px 6px}
 .tiles{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-/* Move list: habits two to a row, workouts full width with their last session. */
-#workoutTiles{grid-template-columns:1fr}
+/* Pad sections in the order of the day (Morning, Day, Evening, from the
+   habit's Section in Notion), then bad habits and workouts. A tap on a header
+   folds the section away; the count still shows what is done today. */
+.sec[hidden]{display:none}
+.sec-head{display:flex;align-items:center;gap:8px;width:100%;margin:12px 0 6px;padding:2px;border:0;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.sec-head .label{flex:1}
+.sec-count{font-size:9px;font-weight:800;letter-spacing:.08em;color:var(--dim);font-variant-numeric:tabular-nums;white-space:nowrap}
+.sec-count.all{color:#7dffb0}
+.sec-count.slip{color:#ff8f8f}
+.chev{flex:none;width:7px;height:7px;margin:0 4px 3px 2px;border-right:2px solid var(--dim);border-bottom:2px solid var(--dim);transform:rotate(45deg);transition:transform 200ms ease}
+.sec.collapsed .chev{transform:rotate(-45deg);margin-bottom:0}
+.sec.collapsed .tiles{display:none}
+.sec.collapsed .sec-head{margin-bottom:0}
 .tile{position:relative;overflow:hidden;display:grid;grid-template-columns:32px 1fr;align-items:center;gap:9px;width:100%;min-height:52px;padding:7px 10px 7px 8px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.035);color:var(--text);font:inherit;text-align:left;cursor:pointer;touch-action:pan-y;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 .tile::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--tier,var(--line))}
 .tile-ic{display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:var(--tier-bg,rgba(255,255,255,.08));font-size:16px;line-height:1}
@@ -81,9 +92,7 @@ body{width:100vw;height:100vh;height:100dvh}
 .tile.is-charging{transform:scale(.98);transition:transform 120ms ease}
 .tile.is-busy{opacity:.6}
 .tile.is-busy .tile-since b::after{content:'…'}
-#workoutTiles .tile{grid-template-columns:38px 1fr;min-height:60px;padding:9px 12px 9px 9px}
-#workoutTiles .tile-ic{width:38px;height:38px;font-size:19px}
-#workoutTiles .tile-name{font-size:14px}
+#workoutTiles .tile-last{font-size:9.5px}
 .pop{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);font-size:22px;font-weight:900;letter-spacing:-.02em;color:var(--warm);text-shadow:0 2px 10px rgba(0,0,0,.8);pointer-events:none;animation:pop 1100ms ease-out forwards;white-space:nowrap}
 .pop.crit{color:var(--hot);font-size:26px}
 .pop.hurt{color:#ff8f8f}
@@ -128,8 +137,8 @@ body{width:100vw;height:100vh;height:100dvh}
 .meter{display:inline-flex;gap:3px;flex:none}
 .meter[hidden]{display:none}
 .meter i{display:block;width:12px;height:5px;border-radius:2px;background:rgba(255,255,255,.12)}
-.tiles:not(#workoutTiles) .meter{gap:2px}
-.tiles:not(#workoutTiles) .meter i{width:8px}
+.tiles .meter{gap:2px}
+.tiles .meter i{width:8px}
 .tile.t1 .meter i:nth-child(-n+1),.tile.t2 .meter i:nth-child(-n+2),.tile.t3 .meter i:nth-child(-n+3){background:var(--tier);box-shadow:0 0 6px var(--tier-bg)}
 .tile.t1{--tier:#8fc3ff;--tier-bg:rgba(120,180,255,.18)}
 .tile.t2{--tier:#ffb547;--tier-bg:rgba(255,170,60,.2)}
@@ -319,12 +328,11 @@ body{width:100vw;height:100vh;height:100dvh}
 <div class="panel" id="panelAttack" role="tabpanel" aria-labelledby="tabAttack">
 <div class="pad" id="pad">
 <div class="power" id="power" hidden></div>
-<div class="label group-label">Good habits</div>
-<div class="tiles" id="goodTiles"></div>
-<div class="label group-label">Bad habits</div>
-<div class="tiles" id="badTiles"></div>
-<div class="label group-label">Workouts</div>
-<div class="tiles" id="workoutTiles"></div>
+<section class="sec" data-sec="morning" hidden><button class="sec-head" type="button" aria-expanded="true"><span class="label">☀️ Morning</span><span class="sec-count"></span><span class="chev" aria-hidden="true"></span></button><div class="tiles" id="morningTiles"></div></section>
+<section class="sec" data-sec="day" hidden><button class="sec-head" type="button" aria-expanded="true"><span class="label">🍽️ Day</span><span class="sec-count"></span><span class="chev" aria-hidden="true"></span></button><div class="tiles" id="dayTiles"></div></section>
+<section class="sec" data-sec="evening" hidden><button class="sec-head" type="button" aria-expanded="true"><span class="label">🌙 Evening</span><span class="sec-count"></span><span class="chev" aria-hidden="true"></span></button><div class="tiles" id="eveningTiles"></div></section>
+<section class="sec" data-sec="bad" hidden><button class="sec-head" type="button" aria-expanded="true"><span class="label">Bad habits</span><span class="sec-count"></span><span class="chev" aria-hidden="true"></span></button><div class="tiles" id="badTiles"></div></section>
+<section class="sec" data-sec="workout" hidden><button class="sec-head" type="button" aria-expanded="true"><span class="label">Workouts</span><span class="sec-count"></span><span class="chev" aria-hidden="true"></span></button><div class="tiles" id="workoutTiles"></div></section>
 </div>
 <div class="hint">Hold to attack · Tap the header to flip</div>
 </div>
@@ -538,29 +546,66 @@ function lastDone(habit) {
 }
 
 // ---- Attack pad: hold a tile to attack ----
-// The publisher sends the group; older data.json files fall back to the effect.
+// The publisher sends the group (good, bad, workout) and, for good habits, the
+// Section set in Notion; a good habit without one goes under Day. Older
+// data.json files fall back to the effect.
+const SECTIONS = ['morning', 'day', 'evening', 'bad', 'workout'];
 function groupOf(habit) {
-  if (habit.group) return habit.group;
-  if (habit.effect === 'Hero HP') return 'bad';
-  return habit.last_strava ? 'workout' : 'good';
+  const group = habit.group || (habit.effect === 'Hero HP' ? 'bad' : habit.last_strava ? 'workout' : 'good');
+  if (group !== 'good') return group;
+  const section = String(habit.section || '').toLowerCase();
+  return SECTIONS.includes(section) ? section : 'day';
 }
 let tilesSignature = '';
 function renderTiles() {
   const habits = (latestState && Array.isArray(latestState.habits)) ? latestState.habits : [];
-  const lists = { good: $('goodTiles'), bad: $('badTiles'), workout: $('workoutTiles') };
+  const lists = Object.fromEntries(SECTIONS.map(section => [section, $(section + 'Tiles')]));
   const signature = habits.map(h => groupOf(h) + ':' + h.key).join(',');
   if (signature !== tilesSignature) {
     tilesSignature = signature;
     for (const list of Object.values(lists)) list.replaceChildren();
-    for (const habit of habits) (lists[groupOf(habit)] || lists.good).append(buildTile(habit));
-    for (const list of Object.values(lists)) {
-      list.hidden = !list.children.length;
-      list.previousElementSibling.hidden = !list.children.length;
-    }
+    for (const habit of habits) (lists[groupOf(habit)] || lists.day).append(buildTile(habit));
+    for (const list of Object.values(lists)) list.closest('.sec').hidden = !list.children.length;
   }
   const tiles = new Map([...document.querySelectorAll('.tile')].map(tile => [tile.dataset.key, tile]));
   for (const habit of habits) updateTile(tiles.get(habit.key), habit);
+  renderSectionCounts(habits);
 }
+// Section headers say what is done this game day, so a folded section still
+// shows whether anything is left: "2 / 4 today", green once all are done.
+function renderSectionCounts(habits) {
+  const today = dayKey(Date.now());
+  for (const section of SECTIONS) {
+    const inSection = habits.filter(h => groupOf(h) === section);
+    const done = inSection.filter(h => { const at = Date.parse(lastDone(h).at || ''); return !isNaN(at) && dayKey(at) === today; }).length;
+    const count = document.querySelector('.sec[data-sec="' + section + '"] .sec-count');
+    count.classList.toggle('all', section !== 'bad' && inSection.length > 0 && done === inSection.length);
+    count.classList.toggle('slip', section === 'bad' && done > 0);
+    count.textContent = section === 'bad' ? (done ? done + (done === 1 ? ' slip today' : ' slips today') : 'clean today')
+      : section === 'workout' ? (done ? done + ' today' : '')
+      : done + ' / ' + inSection.length + ' today';
+  }
+}
+// A tap on a section header folds it away; each device remembers which.
+const COLLAPSED_KEY = 'boss-collapsed';
+let collapsedSections = new Set();
+try { collapsedSections = new Set(JSON.parse(localStorage.getItem(COLLAPSED_KEY) || '[]')); } catch (_) {}
+document.querySelectorAll('.sec').forEach(sec => {
+  const head = sec.querySelector('.sec-head');
+  const apply = () => {
+    const folded = collapsedSections.has(sec.dataset.sec);
+    sec.classList.toggle('collapsed', folded);
+    head.setAttribute('aria-expanded', String(!folded));
+  };
+  apply();
+  head.addEventListener('click', event => {
+    event.stopPropagation();
+    const id = sec.dataset.sec;
+    if (collapsedSections.has(id)) collapsedSections.delete(id); else collapsedSections.add(id);
+    try { localStorage.setItem(COLLAPSED_KEY, JSON.stringify([...collapsedSections])); } catch (_) {}
+    apply();
+  });
+});
 function buildTile(habit) {
   const tile = document.createElement('button');
   tile.type = 'button';
@@ -660,14 +705,16 @@ function renderLastSession(el, s) {
   el.hidden = !s;
   if (!s) return;
   el.replaceChildren();
+  // Half-width tiles have room for one measure: distance, or time when there is none.
   const bits = [];
   if (Number(s.km) > 0) bits.push(Number(s.km).toLocaleString() + ' km');
-  if (Number(s.min) > 0) bits.push(formatMinutes(Number(s.min)));
+  else if (Number(s.min) > 0) bits.push(formatMinutes(Number(s.min)));
   el.append(bits.join(' · '));
   if (s.effort != null) {
     const lvl = document.createElement('span');
     lvl.className = 'lvl';
-    lvl.textContent = (bits.length ? ' · ' : '') + '×' + Number(s.effort) + (s.level ? ' ' + s.level : '');
+    // "Normal" is the default, so only Easy, Big and Epic are spelled out.
+    lvl.textContent = (bits.length ? ' · ' : '') + '×' + Number(s.effort) + (s.level && s.level !== 'Normal' ? ' ' + s.level : '');
     el.append(lvl);
   }
   if (s.special) {
