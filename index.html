@@ -51,7 +51,7 @@ body{width:100vw;height:100vh;height:100dvh}
 .hero-hp{font-size:11px;font-weight:800;color:#ffd0d0;font-variant-numeric:tabular-nums}
 .back .hero-track{margin-top:4px;height:4px}
 .hero-fill{background:linear-gradient(90deg,#ff8f8f,#ffd0d0)}
-.tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:12px;padding:3px;border-radius:11px;background:rgba(255,255,255,.06)}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:12px;padding:3px;border-radius:11px;background:rgba(255,255,255,.06)}
 .tab{border:0;margin:0;padding:7px 0;border-radius:8px;background:transparent;color:var(--dim);font:inherit;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;cursor:pointer}
 .tab[aria-selected="true"]{background:rgba(255,255,255,.12);color:#fff}
 .panel{flex:1;min-height:0;display:flex;flex-direction:column}
@@ -163,6 +163,19 @@ body{width:100vw;height:100vh;height:100dvh}
 @keyframes orb{50%{transform:scale(1.25);opacity:.7}}
 .victory.summoning .v-stats,.victory.summoning .v-final,.victory.summoning .v-btn{display:none}
 .victory.summoning .v-orb{display:block}
+/* Stuck: no new boss 21 minutes after the claim, so the spawn most likely failed. */
+.victory.summoning.stuck .v-btn{display:block}
+.victory.summoning.stuck .v-orb{animation:none;opacity:.35}
+
+/* Lore: the boss's epithet under its name on the front, the full story on the back */
+.epithet{margin-top:3px;font-size:10px;font-weight:750;letter-spacing:.06em;color:#ffc680;text-shadow:0 1px 4px rgba(0,0,0,.9)}
+.epithet:empty{display:none}
+.lore{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:18px 4px 12px}
+.lore-epithet{font-size:10px;font-weight:850;letter-spacing:.24em;text-transform:uppercase;color:#ffb547}
+.lore-name{margin-top:6px;font-size:clamp(24px,7.5vw,30px);font-weight:900;letter-spacing:-.02em;line-height:1.1}
+.lore-text{margin:14px 0 0;font-size:15px;font-weight:500;line-height:1.6;color:var(--muted)}
+.lore-facts{display:flex;flex-wrap:wrap;gap:6px;margin-top:18px}
+.lore-facts span{padding:5px 9px;border:1px solid var(--line);border-radius:999px;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
 @media(prefers-reduced-motion:reduce){.victory{animation:none;opacity:1}.v-btn,.v-orb{animation:none}}
 
 /* Damage overlay: the front shows how hurt the boss is. --d runs from 0 at
@@ -233,7 +246,7 @@ body{width:100vw;height:100vh;height:100dvh}
 </div>
 </div>
 <div class="hud-top">
-<div class="metric"><div class="label">Boss</div><div class="value boss-name" id="bossName">—</div></div>
+<div class="metric"><div class="label">Boss</div><div class="value boss-name" id="bossName">—</div><div class="epithet" id="bossEpithet"></div></div>
 <div class="metric right"><div class="label">Level</div><div class="value level-num" id="level">—</div><div class="power-mult" id="powerMult"></div></div>
 </div>
 <div class="hud-bottom" id="hpHud" hidden>
@@ -249,6 +262,7 @@ body{width:100vw;height:100vh;height:100dvh}
 <div class="tabs" role="tablist">
 <button class="tab" type="button" role="tab" id="tabAttack" aria-controls="panelAttack" aria-selected="true">Attack</button>
 <button class="tab" type="button" role="tab" id="tabLog" aria-controls="panelLog" aria-selected="false">Log</button>
+<button class="tab" type="button" role="tab" id="tabLore" aria-controls="panelLore" aria-selected="false">Lore</button>
 </div>
 <div class="panel" id="panelAttack" role="tabpanel" aria-labelledby="tabAttack">
 <div class="pad" id="pad">
@@ -280,6 +294,15 @@ body{width:100vw;height:100vh;height:100dvh}
 <ul class="log" id="log"></ul>
 <div class="hint">Swipe a hit left to revert · Tap to flip back</div>
 </div>
+<div class="panel" id="panelLore" role="tabpanel" aria-labelledby="tabLore" hidden>
+<div class="lore">
+<div class="lore-epithet" id="loreEpithet"></div>
+<div class="lore-name" id="loreName">—</div>
+<p class="lore-text" id="loreText"></p>
+<div class="lore-facts" id="loreFacts"></div>
+</div>
+<div class="hint">Tap to flip back</div>
+</div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 </section>
 </main>
@@ -296,6 +319,7 @@ const REVERT_URL = 'https://hook.eu2.make.com/91jpq9bav3688kr4mt21obvqx63w04x7';
 // Make scenario 9867207 "Boss — Claim Victory & Summon Next", passcode-checked
 // like the two above. Claiming a combat victory starts Boss Spawn.
 const CLAIM_URL = 'https://hook.eu2.make.com/5w5cvi610z5actjsftn78b91peyd1usn';
+const STUCK_MS = 21 * 60 * 1000;
 const PASSCODE_KEY = 'boss-revert-passcode';
 const TAB_KEY = 'boss-tab';
 const FILTER_KEY = 'boss-log-filter';
@@ -376,17 +400,20 @@ cardEl.addEventListener('keydown', event => {
 });
 cardEl.addEventListener('contextmenu', event => event.preventDefault());
 
+const TABS = ['attack', 'log', 'lore'];
 function showTab(name) {
-  const attack = name !== 'log';
-  $('tabAttack').setAttribute('aria-selected', String(attack));
-  $('tabLog').setAttribute('aria-selected', String(!attack));
-  $('panelAttack').hidden = !attack;
-  $('panelLog').hidden = attack;
+  const shown = TABS.includes(name) ? name : 'attack';
+  for (const tab of TABS) {
+    const id = tab[0].toUpperCase() + tab.slice(1);
+    $('tab' + id).setAttribute('aria-selected', String(tab === shown));
+    $('panel' + id).hidden = tab !== shown;
+  }
   closeOpenRow();
-  try { localStorage.setItem(TAB_KEY, attack ? 'attack' : 'log'); } catch (_) {}
+  try { localStorage.setItem(TAB_KEY, shown); } catch (_) {}
 }
 $('tabAttack').addEventListener('click', () => showTab('attack'));
 $('tabLog').addEventListener('click', () => showTab('log'));
+$('tabLore').addEventListener('click', () => showTab('lore'));
 try { showTab(localStorage.getItem(TAB_KEY) || 'attack'); } catch (_) { showTab('attack'); }
 
 let logFilter = 'all';
@@ -671,7 +698,9 @@ function satisfied(expectation, fetched) {
   const log = Array.isArray(fetched.log) ? fetched.log : [];
   if (expectation.kind === 'add') return !expectation.id || log.some(hit => hit.id === expectation.id);
   if (expectation.kind === 'drop') return !log.some(hit => hit.id === expectation.id);
-  if (expectation.kind === 'claim') return !!fetched.victory_claimed_at || String(fetched.fight_id) !== String(expectation.fight);
+  // Notion keeps claim times to the minute, so allow a minute of rounding; a
+  // retry must see its own newer claim, not the one that got stuck.
+  if (expectation.kind === 'claim') return Date.parse(fetched.victory_claimed_at || '') >= Date.parse(expectation.at) - 60000 || String(fetched.fight_id) !== String(expectation.fight);
   return true;
 }
 function pickState(fetched) {
@@ -970,6 +999,7 @@ function renderState(state) {
   renderDamage(state);
   renderPower(state);
   renderVictory(state);
+  renderLore(state);
   const heroMax = Number(state.hero_max_hp);
   const heroShown = heroMax > 0 && state.hero_hp != null;
   $('heroLine').hidden = !heroShown;
@@ -1079,11 +1109,18 @@ function renderVictory(state) {
   const el = $('victory');
   if (!won) { el.hidden = true; return; }
   const summoning = !!state.victory_claimed_at;
+  // The claim scenario accepts a new claim 20 minutes after the last one; a
+  // minute more keeps a slow phone clock from hitting 'already on its way'.
+  const stuck = summoning && Date.now() - Date.parse(state.victory_claimed_at) > STUCK_MS;
   el.hidden = false;
   el.classList.toggle('summoning', summoning);
-  $('vKicker').textContent = summoning ? 'Victory claimed' : 'Boss defeated';
+  el.classList.toggle('stuck', stuck);
+  $('vKicker').textContent = stuck ? 'Still summoning' : summoning ? 'Victory claimed' : 'Boss defeated';
   $('vTitle').textContent = summoning ? 'A new challenger approaches' : 'Victory';
-  $('vBoss').textContent = summoning ? 'Summoning the next boss. This takes a few minutes.' : (state.boss_name || 'The boss') + ' has fallen';
+  $('vBoss').textContent = stuck ? 'The next boss is taking much longer than usual. Generating it probably failed.'
+    : summoning ? 'Summoning the next boss. This takes a few minutes.' : (state.boss_name || 'The boss') + ' has fallen';
+  $('vBtn').dataset.label = stuck ? 'Try summoning again' : 'Claim victory';
+  if (!claimBusy) $('vBtn').textContent = $('vBtn').dataset.label;
   const hits = (Array.isArray(state.log) ? state.log : []).filter(hit => kindOf(hit) === 'boss');
   $('vDamage').textContent = hits.reduce((a, hit) => a + (Number(hit.damage) || 0), 0).toLocaleString();
   $('vHits').textContent = hits.length.toLocaleString();
@@ -1093,11 +1130,33 @@ function renderVictory(state) {
   $('vDays').textContent = !isNaN(start) && !isNaN(end) ? String(Math.max(1, Math.ceil((end - start) / 86400000))) : '—';
   const last = hits[0];
   $('vFinal').textContent = last ? 'Final blow: ' + (last.habit || 'Hit') + ' · ' + (Number(last.damage) || 0).toLocaleString() + (Number(last.crit) === 1 ? ' crit' : '') : '';
-  if (!claimBusy) $('vNote').textContent = summoning ? 'This card updates by itself when it arrives.' : 'Claiming summons the next challenger.';
+  if (!claimBusy) $('vNote').textContent = stuck ? 'Or wait: the 04:45 run retries by itself.'
+    : summoning ? 'This card updates by itself when it arrives.' : 'Claiming summons the next challenger.';
   // The attack pad has nothing to hit until the next boss arrives.
   $('power').hidden = false;
   $('power').innerHTML = summoning ? '<span><b>Next boss incoming</b></span>' : '<span><b>Boss defeated</b> · claim your victory on the front</span>';
 }
+// ---- Lore ----
+// Epithet and lore come from the fight's Boss Design in Notion.
+const loreDate = new Intl.DateTimeFormat('en-GB', { timeZone: TIME_ZONE, weekday: 'short', day: 'numeric', month: 'short' });
+function renderLore(state) {
+  const epithet = state.epithet || '';
+  $('bossEpithet').textContent = epithet;
+  $('loreEpithet').textContent = epithet;
+  $('loreName').textContent = state.boss_name || '—';
+  $('loreText').textContent = state.lore || 'No lore recorded for this boss yet.';
+  const facts = [];
+  if (state.boss_level) facts.push('Level ' + Number(state.boss_level));
+  if (state.max_hp) facts.push(Number(state.max_hp).toLocaleString() + ' HP');
+  const started = Date.parse(state.started_at || '');
+  if (!isNaN(started)) facts.push('Since ' + loreDate.format(new Date(started)));
+  $('loreFacts').replaceChildren(...facts.map(fact => {
+    const span = document.createElement('span');
+    span.textContent = fact;
+    return span;
+  }));
+}
+
 let claimBusy = false;
 $('vBtn').addEventListener('click', async event => {
   event.stopPropagation();
@@ -1114,15 +1173,16 @@ $('vBtn').addEventListener('click', async event => {
     if (!result.ok) throw new Error(result.message || 'Claim failed');
     savePasscode(passcode);
     claimBusy = false;
-    const claimed = Object.assign({}, latestState, { victory_claimed_at: result.claimed_at || new Date().toISOString() });
-    applyLocal(claimed, [{ kind: 'claim', fight: latestState.fight_id }]);
+    const at = result.claimed_at || new Date().toISOString();
+    const claimed = Object.assign({}, latestState, { victory_claimed_at: at });
+    applyLocal(claimed, [{ kind: 'claim', fight: latestState.fight_id, at }]);
   } catch (error) {
     claimBusy = true;
     $('vNote').textContent = failMessage(error);
     setTimeout(() => { claimBusy = false; }, 4000);
   } finally {
     button.disabled = false;
-    button.textContent = 'Claim victory';
+    button.textContent = button.dataset.label || 'Claim victory';
   }
 });
 
