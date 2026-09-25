@@ -60,8 +60,9 @@ body{width:100vw;height:100vh;height:100dvh}
 .group-label{margin:12px 2px 6px}
 .tiles{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 /* Pad sections in the order of the day (Morning, Day, Evening, from the
-   habit's Section in Notion), then bad habits and workouts. A tap on a header
-   folds the section away; the count still shows what is done today. */
+   habit's Section in Notion), then Weekly, bad habits and workouts. A tap on a
+   header folds the section away; the count still shows what is done today (or
+   this week). */
 .sec[hidden]{display:none}
 .sec-head{display:flex;align-items:center;gap:8px;width:100%;margin:12px 0 6px;padding:2px;border:0;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer}
 .sec-head .label{flex:1}
@@ -340,6 +341,7 @@ body{width:100vw;height:100vh;height:100dvh}
 <section class="sec" data-sec="morning" hidden><button class="sec-head" type="button" aria-expanded="true"><span class="label">☀️ Morning</span><span class="sec-count"></span><span class="chev" aria-hidden="true"></span></button><div class="tiles" id="morningTiles"></div></section>
 <section class="sec" data-sec="day" hidden><button class="sec-head" type="button" aria-expanded="true"><span class="label">🍽️ Day</span><span class="sec-count"></span><span class="chev" aria-hidden="true"></span></button><div class="tiles" id="dayTiles"></div></section>
 <section class="sec" data-sec="evening" hidden><button class="sec-head" type="button" aria-expanded="true"><span class="label">🌙 Evening</span><span class="sec-count"></span><span class="chev" aria-hidden="true"></span></button><div class="tiles" id="eveningTiles"></div></section>
+<section class="sec" data-sec="weekly" hidden><button class="sec-head" type="button" aria-expanded="true"><span class="label">🗓️ Weekly</span><span class="sec-count"></span><span class="chev" aria-hidden="true"></span></button><div class="tiles" id="weeklyTiles"></div></section>
 <section class="sec" data-sec="bad" hidden><button class="sec-head" type="button" aria-expanded="true"><span class="label">Bad habits</span><span class="sec-count"></span><span class="chev" aria-hidden="true"></span></button><div class="tiles" id="badTiles"></div></section>
 <section class="sec" data-sec="workout" hidden><button class="sec-head" type="button" aria-expanded="true"><span class="label">Workouts</span><span class="sec-count"></span><span class="chev" aria-hidden="true"></span></button><div class="tiles" id="workoutTiles"></div></section>
 </div>
@@ -558,7 +560,7 @@ function lastDone(habit) {
 // The publisher sends the group (good, bad, workout) and, for good habits, the
 // Section set in Notion; a good habit without one goes under Day. Older
 // data.json files fall back to the effect.
-const SECTIONS = ['morning', 'day', 'evening', 'bad', 'workout'];
+const SECTIONS = ['morning', 'day', 'evening', 'weekly', 'bad', 'workout'];
 function groupOf(habit) {
   const group = habit.group || (habit.effect === 'Hero HP' ? 'bad' : habit.last_strava ? 'workout' : 'good');
   if (group !== 'good') return group;
@@ -582,17 +584,23 @@ function renderTiles() {
 }
 // Section headers say what is done this game day, so a folded section still
 // shows whether anything is left: "2 / 4 today", green once all are done.
+// Weekly habits count the game week instead, Monday 04:00 to Monday 04:00.
 function renderSectionCounts(habits) {
   const today = dayKey(Date.now());
+  const thisWeek = weekKey(Date.now());
   for (const section of SECTIONS) {
     const inSection = habits.filter(h => groupOf(h) === section);
-    const done = inSection.filter(h => { const at = Date.parse(lastDone(h).at || ''); return !isNaN(at) && dayKey(at) === today; }).length;
+    const weekly = section === 'weekly';
+    const done = inSection.filter(h => {
+      const at = Date.parse(lastDone(h).at || '');
+      return !isNaN(at) && (weekly ? weekKey(at) === thisWeek : dayKey(at) === today);
+    }).length;
     const count = document.querySelector('.sec[data-sec="' + section + '"] .sec-count');
     count.classList.toggle('all', section !== 'bad' && inSection.length > 0 && done === inSection.length);
     count.classList.toggle('slip', section === 'bad' && done > 0);
     count.textContent = section === 'bad' ? (done ? done + (done === 1 ? ' slip today' : ' slips today') : 'clean today')
       : section === 'workout' ? (done ? done + ' today' : '')
-      : done + ' / ' + inSection.length + ' today';
+      : done + ' / ' + inSection.length + (weekly ? ' this week' : ' today');
   }
 }
 // A tap on a section header folds it away; each device remembers which.
@@ -693,7 +701,7 @@ function damageOf(habit) {
 function streakBonus(days) { return days >= 7 ? 30 : days >= 5 ? 20 : days >= 3 ? 10 : 0; }
 function streakOf(habit) {
   const days = Number(habit.streak) || 0;
-  if (habit.effect === 'Hero HP' || days < 2 || !habit.streak_day) return null;
+  if (habit.effect === 'Hero HP' || groupOf(habit) === 'weekly' || days < 2 || !habit.streak_day) return null;
   const now = Date.now();
   if (habit.streak_day === dayKey(now)) return { days, today: true, bonus: streakBonus(days) };
   if (habit.streak_day === dayKey(now - 86400000)) return { days, today: false, next: streakBonus(days + 1) };
@@ -1127,6 +1135,11 @@ const dayKeyFormat = new Intl.DateTimeFormat('en-CA', { timeZone: TIME_ZONE, yea
 const dayLabelFormat = new Intl.DateTimeFormat('en-GB', { timeZone: 'UTC', weekday: 'short', day: 'numeric', month: 'short' });
 function dayKey(ms) {
   return dayKeyFormat.format(new Date(ms - DAY_START_HOURS * 3600000));
+}
+// The Monday that starts this game day's week.
+function weekKey(ms) {
+  const day = Date.parse(dayKey(ms) + 'T12:00:00Z');
+  return new Date(day - ((new Date(day).getUTCDay() + 6) % 7) * 86400000).toISOString().slice(0, 10);
 }
 function dayLabel(key) {
   if (key === dayKey(Date.now())) return 'Today';
