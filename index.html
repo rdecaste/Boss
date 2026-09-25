@@ -137,6 +137,34 @@ body{width:100vw;height:100vh;height:100dvh}
 .power[hidden]{display:none}
 .front .power-mult{margin-top:3px;font-size:9px;font-weight:850;letter-spacing:.1em;color:#ffb547;text-shadow:0 1px 4px rgba(0,0,0,.85)}
 
+/* Victory: the boss died in combat. Shown until the victory is claimed, then
+   'summoning' until Boss Spawn publishes the next fight. */
+.front.won .hero-video{filter:grayscale(.85) brightness(.45) contrast(1.05)}
+.front.won .fx:not(.fx-flash){opacity:0 !important;animation:none !important}
+.front.won .hud-bottom{opacity:0}
+.victory{position:absolute;inset:0;z-index:8;display:flex;align-items:center;justify-content:center;padding:24px 18px;text-align:center;background:radial-gradient(90% 55% at 50% 42%,rgba(255,196,60,.26),rgba(5,7,11,.55) 60%,rgba(5,7,11,.88));opacity:0;animation:victoryIn 900ms ease-out 700ms forwards}
+.victory[hidden]{display:none}
+@keyframes victoryIn{from{opacity:0;transform:scale(1.04)}to{opacity:1;transform:none}}
+.v-panel{width:100%;max-width:340px}
+.v-kicker{font-size:10px;font-weight:850;letter-spacing:.3em;text-transform:uppercase;color:#ffd35a}
+.v-title{margin-top:6px;font-size:clamp(46px,15vw,64px);font-weight:900;letter-spacing:.04em;line-height:1;text-transform:uppercase;background:linear-gradient(180deg,#fff6d6,#ffd35a 45%,#ff9f1c);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 4px 18px rgba(255,180,40,.45))}
+.victory.summoning .v-title{font-size:clamp(24px,7.5vw,32px);line-height:1.1}
+.v-boss{margin-top:10px;font-size:15px;font-weight:800;color:#fff;line-height:1.35}
+.v-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:18px}
+.v-stat{padding:8px 4px 7px;border-radius:12px;background:rgba(0,0,0,.38);border:1px solid rgba(255,211,90,.2)}
+.v-stat b{display:block;font-size:17px;font-weight:900;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.v-stat span{font-size:7.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+.v-final{margin-top:12px;font-size:12px;font-weight:700;color:var(--muted)}
+.v-btn{margin-top:20px;width:100%;padding:15px 12px;border:0;border-radius:14px;background:linear-gradient(90deg,#ffd35a,#ff9f1c);color:#1a1000;font:inherit;font-size:14px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;box-shadow:0 8px 28px rgba(255,170,40,.35);animation:vpulse 2.2s ease-in-out infinite}
+.v-btn:disabled{opacity:.6;animation:none}
+@keyframes vpulse{50%{box-shadow:0 8px 40px rgba(255,190,60,.65)}}
+.v-note{margin-top:9px;font-size:10.5px;font-weight:700;letter-spacing:.04em;color:var(--dim)}
+.v-orb{display:none;margin:22px auto 4px;width:58px;height:58px;border-radius:50%;background:radial-gradient(circle,#fff6d6,#ffb547 40%,rgba(255,120,40,0) 70%);animation:orb 1.6s ease-in-out infinite}
+@keyframes orb{50%{transform:scale(1.25);opacity:.7}}
+.victory.summoning .v-stats,.victory.summoning .v-final,.victory.summoning .v-btn{display:none}
+.victory.summoning .v-orb{display:block}
+@media(prefers-reduced-motion:reduce){.victory{animation:none;opacity:1}.v-btn,.v-orb{animation:none}}
+
 /* Damage overlay: the front shows how hurt the boss is. --d runs from 0 at
    full HP to 1 at 0 HP; stage-2 is 26-60% HP, stage-3 is 25% or less. */
 .fx{position:absolute;inset:0;pointer-events:none}
@@ -187,6 +215,23 @@ body{width:100vw;height:100vh;height:100dvh}
 </svg>
 <canvas class="fx fx-embers" id="embers" aria-hidden="true"></canvas>
 <div class="fx fx-flash" id="flash"></div>
+<div class="victory" id="victory" hidden>
+<div class="v-panel">
+<div class="v-kicker" id="vKicker">Boss defeated</div>
+<div class="v-title" id="vTitle">Victory</div>
+<div class="v-boss" id="vBoss"></div>
+<div class="v-stats">
+<div class="v-stat"><b id="vDamage">0</b><span>Damage</span></div>
+<div class="v-stat"><b id="vHits">0</b><span>Hits</span></div>
+<div class="v-stat"><b id="vCrits">0</b><span>Crits</span></div>
+<div class="v-stat"><b id="vDays">0</b><span>Days</span></div>
+</div>
+<div class="v-final" id="vFinal"></div>
+<div class="v-orb"></div>
+<button class="v-btn" type="button" id="vBtn">Claim victory</button>
+<div class="v-note" id="vNote"></div>
+</div>
+</div>
 <div class="hud-top">
 <div class="metric"><div class="label">Boss</div><div class="value boss-name" id="bossName">—</div></div>
 <div class="metric right"><div class="label">Level</div><div class="value level-num" id="level">—</div><div class="power-mult" id="powerMult"></div></div>
@@ -248,6 +293,9 @@ const STATE_URL = 'data.json';
 // repo does not let anyone else attack or heal the boss.
 const ATTACK_URL = 'https://hook.eu2.make.com/473lvjmuusks2syjve4y2mrco5eye82d';
 const REVERT_URL = 'https://hook.eu2.make.com/91jpq9bav3688kr4mt21obvqx63w04x7';
+// Make scenario 9867207 "Boss — Claim Victory & Summon Next", passcode-checked
+// like the two above. Claiming a combat victory starts Boss Spawn.
+const CLAIM_URL = 'https://hook.eu2.make.com/5w5cvi610z5actjsftn78b91peyd1usn';
 const PASSCODE_KEY = 'boss-revert-passcode';
 const TAB_KEY = 'boss-tab';
 const FILTER_KEY = 'boss-log-filter';
@@ -311,7 +359,7 @@ document.addEventListener('visibilitychange', () => {
 cardEl.addEventListener('click', event => {
   // A swipe or hold ends in a click on some browsers; an open row closes on the next tap.
   if (suppressClick) { suppressClick = false; return; }
-  if (event.target.closest('.row-action, .tile, .tabs, .filters')) return;
+  if (event.target.closest('.row-action, .tile, .tabs, .filters, .v-btn')) return;
   if (openRow) { closeOpenRow(); return; }
   if (busy) return;
   const flipped = cardEl.classList.contains('is-flipped');
@@ -586,6 +634,11 @@ function withHabitTime(state, key, at) {
 function withHit(state, result, key) {
   const next = withHabitTime(state, key, result.occurred_at);
   next.current_hp = Number(result.hp_after);
+  if (Number(result.defeated) === 1) {
+    next.status = 'Defeated';
+    next.defeat_reason = 'Defeated in Combat';
+    next.defeated_at = result.occurred_at;
+  }
   if (result.hp_max) next.max_hp = Number(result.hp_max);
   const id = String(result.event_id || '').replace(/-/g, '');
   const log = (state.log || []).filter(hit => hit.id !== id);
@@ -618,6 +671,7 @@ function satisfied(expectation, fetched) {
   const log = Array.isArray(fetched.log) ? fetched.log : [];
   if (expectation.kind === 'add') return !expectation.id || log.some(hit => hit.id === expectation.id);
   if (expectation.kind === 'drop') return !log.some(hit => hit.id === expectation.id);
+  if (expectation.kind === 'claim') return !!fetched.victory_claimed_at || String(fetched.fight_id) !== String(expectation.fight);
   return true;
 }
 function pickState(fetched) {
@@ -915,6 +969,7 @@ function renderState(state) {
   }
   renderDamage(state);
   renderPower(state);
+  renderVictory(state);
   const heroMax = Number(state.hero_max_hp);
   const heroShown = heroMax > 0 && state.hero_hp != null;
   $('heroLine').hidden = !heroShown;
@@ -1013,6 +1068,63 @@ async function refreshDashboard() {
     console.error('Boss dashboard refresh failed', error);
   }
 }
+
+// ---- Victory ----
+// A combat defeat covers the front with a victory screen until it is claimed.
+// Claiming starts Boss Spawn; the screen then waits for the next fight, which
+// replaces it as soon as the publisher sends a new fight_id.
+function renderVictory(state) {
+  const won = state.status === 'Defeated' && state.defeat_reason === 'Defeated in Combat';
+  frontEl.classList.toggle('won', won);
+  const el = $('victory');
+  if (!won) { el.hidden = true; return; }
+  const summoning = !!state.victory_claimed_at;
+  el.hidden = false;
+  el.classList.toggle('summoning', summoning);
+  $('vKicker').textContent = summoning ? 'Victory claimed' : 'Boss defeated';
+  $('vTitle').textContent = summoning ? 'A new challenger approaches' : 'Victory';
+  $('vBoss').textContent = summoning ? 'Summoning the next boss. This takes a few minutes.' : (state.boss_name || 'The boss') + ' has fallen';
+  const hits = (Array.isArray(state.log) ? state.log : []).filter(hit => kindOf(hit) === 'boss');
+  $('vDamage').textContent = hits.reduce((a, hit) => a + (Number(hit.damage) || 0), 0).toLocaleString();
+  $('vHits').textContent = hits.length.toLocaleString();
+  $('vCrits').textContent = hits.filter(hit => Number(hit.crit) === 1).length.toLocaleString();
+  const start = Date.parse(state.started_at || (hits.length ? hits[hits.length - 1].at : ''));
+  const end = Date.parse(state.defeated_at || (hits.length ? hits[0].at : ''));
+  $('vDays').textContent = !isNaN(start) && !isNaN(end) ? String(Math.max(1, Math.ceil((end - start) / 86400000))) : '—';
+  const last = hits[0];
+  $('vFinal').textContent = last ? 'Final blow: ' + (last.habit || 'Hit') + ' · ' + (Number(last.damage) || 0).toLocaleString() + (Number(last.crit) === 1 ? ' crit' : '') : '';
+  if (!claimBusy) $('vNote').textContent = summoning ? 'This card updates by itself when it arrives.' : 'Claiming summons the next challenger.';
+  // The attack pad has nothing to hit until the next boss arrives.
+  $('power').hidden = false;
+  $('power').innerHTML = summoning ? '<span><b>Next boss incoming</b></span>' : '<span><b>Boss defeated</b> · claim your victory on the front</span>';
+}
+let claimBusy = false;
+$('vBtn').addEventListener('click', async event => {
+  event.stopPropagation();
+  if (claimBusy || busy || !latestState) return;
+  const passcode = askPasscode();
+  if (!passcode) return;
+  claimBusy = true;
+  const button = $('vBtn');
+  button.disabled = true;
+  button.textContent = 'Claiming…';
+  try {
+    const result = await post(CLAIM_URL, { fight_id: latestState.fight_id, passcode });
+    if (result.code === 'bad_passcode') savePasscode('');
+    if (!result.ok) throw new Error(result.message || 'Claim failed');
+    savePasscode(passcode);
+    claimBusy = false;
+    const claimed = Object.assign({}, latestState, { victory_claimed_at: result.claimed_at || new Date().toISOString() });
+    applyLocal(claimed, [{ kind: 'claim', fight: latestState.fight_id }]);
+  } catch (error) {
+    claimBusy = true;
+    $('vNote').textContent = failMessage(error);
+    setTimeout(() => { claimBusy = false; }, 4000);
+  } finally {
+    button.disabled = false;
+    button.textContent = 'Claim victory';
+  }
+});
 
 // ---- Damage overlay ----
 // The front gets more battered as the boss's HP drops. HP lost since this
