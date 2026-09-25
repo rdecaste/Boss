@@ -51,6 +51,17 @@ body{width:100vw;height:100vh;height:100dvh}
 .hero-hp{font-size:11px;font-weight:800;color:#ffd0d0;font-variant-numeric:tabular-nums}
 .back .hero-track{margin-top:4px;height:4px}
 .hero-fill{background:linear-gradient(90deg,#ff8f8f,#ffd0d0)}
+/* A hit lands on the pad too: the header shakes, a red flash washes down from
+   the top, the damage pops up over the header and the HP bar leaves a white
+   trail that drains, like the front. */
+.back .hp-track{position:relative}
+.back .hp-track .hp-fill{position:relative}
+.sc-head.jolt,.back .hp-track.jolt,.hero-line.jolt{animation:shake 420ms cubic-bezier(.36,.07,.19,.97)}
+.back-flash{position:absolute;left:0;right:0;top:0;height:170px;z-index:7;pointer-events:none;background:radial-gradient(90% 100% at 50% 0%,rgba(255,90,60,.55),rgba(255,40,40,.18) 55%,transparent 80%);animation:flash 420ms ease-out forwards}
+.back-flash.hurt{background:radial-gradient(90% 100% at 50% 0%,rgba(255,60,60,.6),rgba(160,0,0,.22) 55%,transparent 80%)}
+.pop.hitpop{top:92px;z-index:8;font-size:40px;animation-duration:1400ms}
+.pop.hitpop.crit{font-size:46px}
+.pop.hitpop small{display:block;margin-top:2px;font-size:11px;font-weight:850;letter-spacing:.14em;text-align:center;text-transform:uppercase}
 .tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:12px;padding:3px;border-radius:11px;background:rgba(255,255,255,.06)}
 .tab{border:0;margin:0;padding:7px 0;border-radius:8px;background:transparent;color:var(--dim);font:inherit;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;cursor:pointer}
 .tab[aria-selected="true"]{background:rgba(255,255,255,.12);color:#fff}
@@ -281,7 +292,7 @@ body{width:100vw;height:100vh;height:100dvh}
 .front.stage-3 .hud-bottom .hp-fill{background:linear-gradient(90deg,#ff2d2d,#ff6a3d);animation:blink 1s infinite}
 .pop.big{top:38%;z-index:7;font-size:34px}
 @media(prefers-reduced-motion:reduce){.front.shake,.front.stage-3 .fx-vignette,.front.stage-3 .fx-flicker,.front.stage-3 .stage-tag,.front.stage-3 .hud-bottom .hp-fill{animation:none}.hp-trail{transition:none}}
-@media(prefers-reduced-motion:reduce){.tile.strike,.tile.strike .charge{animation:none}.tile.is-sending::after{animation-duration:3s}.card{transition:none}.hero-video{transition:none}.hp-fill{transition:none}.hit,.row{transition:none}.pop{animation-duration:1ms}}
+@media(prefers-reduced-motion:reduce){.sc-head.jolt,.back .hp-track.jolt,.hero-line.jolt,.back-flash{animation:none}.back-flash{opacity:0}.tile.strike,.tile.strike .charge{animation:none}.tile.is-sending::after{animation-duration:3s}.card{transition:none}.hero-video{transition:none}.hp-fill{transition:none}.hit,.row{transition:none}.pop{animation-duration:1ms}}
 </style>
 </head>
 <body>
@@ -326,7 +337,7 @@ body{width:100vw;height:100vh;height:100dvh}
 </section>
 <section class="face back" id="back" aria-hidden="true">
 <div class="sc-head"><div class="sc-title" id="scBoss">—</div><div class="sc-hp" id="scHp">—</div></div>
-<div class="hp-track"><div class="hp-fill" id="scFill"></div></div>
+<div class="hp-track"><div class="hp-trail" id="scTrail"></div><div class="hp-fill" id="scFill"></div></div>
 <div class="hero-line" id="heroLine" hidden><span class="label" id="heroName">Hero</span><span class="hero-hp" id="heroHp">—</span></div>
 <div class="hp-track hero-track" id="heroTrack" hidden><div class="hp-fill hero-fill" id="heroFill"></div></div>
 <div class="tabs" role="tablist">
@@ -896,10 +907,13 @@ async function sendAttacks() {
     const at = tileOf(job.key);
     if (result.code === 'hit') {
       if (at) popOn(at, (result.critical ? '⚡ −' : '−') + result.damage, result.critical ? 'crit' : '');
+      const before = hpShare(latestState, 'boss');
       applyLocal(withHit(latestState, result, job.key), [{ kind: 'add', id: String(result.event_id || '').replace(/-/g, '') }]);
+      landOnPad(result, 'boss', before);
     } else if (result.code === 'hero_hit') {
       if (at) popOn(at, '−' + result.damage + ' you', 'hurt');
       applyLocal(withHeroHit(latestState, result, job.key, job.occurredAt), [{ kind: 'add', id: String(result.event_id || '').replace(/-/g, '') }]);
+      landOnPad(result, 'hero');
     } else {
       undoTap(job);
     }
@@ -913,6 +927,57 @@ async function sendAttacks() {
     if (t) t.classList.remove('is-sending');
     sendAttacks();
   }
+}
+// The reply lands where you are. On the pad the header shakes under a red
+// flash, the damage pops over it and, for the boss, the HP bar drains through a
+// white trail. That damage then counts as seen, so the front does not replay
+// it; anything else the front has not shown yet still plays there.
+function hpShare(state, kind) {
+  const cur = Number(kind === 'hero' ? state && state.hero_hp : state && state.current_hp);
+  const max = Number(kind === 'hero' ? state && state.hero_max_hp : state && state.max_hp);
+  return max > 0 && isFinite(cur) ? Math.max(0, Math.min(100, cur / max * 100)) : null;
+}
+function landOnPad(result, kind, before) {
+  if (!cardEl.classList.contains('is-flipped')) return;
+  const damage = Number(result.damage) || 0;
+  if (navigator.vibrate) navigator.vibrate(result.critical ? [30, 40, 60] : 35);
+  if (kind === 'boss') {
+    const trail = $('scTrail');
+    if (before != null) {
+      // The fill has already moved; start the trail where the bar was and let it drain.
+      trail.style.transition = 'none';
+      trail.style.width = before + '%';
+      void trail.offsetWidth;
+      trail.style.transition = '';
+      trail.style.width = (hpShare(latestState, 'boss') ?? before) + '%';
+    }
+    const seen = readSeen();
+    const fight = String(latestState.fight_id || latestState.boss_name || '');
+    if (seen && seen.fight === fight) writeSeen(fight, Math.max(Number(latestState.current_hp) || 0, seen.hp - damage));
+  }
+  if (reduceMotion()) return;
+  const parts = kind === 'hero'
+    ? [$('heroLine'), $('heroTrack')]
+    : [backEl.querySelector('.sc-head'), $('scFill').parentElement];
+  for (const el of parts) {
+    if (!el) continue;
+    el.classList.remove('jolt'); void el.offsetWidth; el.classList.add('jolt');
+    el.addEventListener('animationend', () => el.classList.remove('jolt'), { once: true });
+  }
+  const flash = document.createElement('div');
+  flash.className = 'back-flash' + (kind === 'hero' ? ' hurt' : '');
+  backEl.append(flash);
+  setTimeout(() => flash.remove(), 500);
+  const pop = document.createElement('div');
+  pop.className = 'pop hitpop' + (kind === 'hero' ? ' hurt' : result.critical ? ' crit' : '');
+  pop.textContent = (result.critical ? '⚡ −' : '−') + damage.toLocaleString();
+  if (kind === 'hero' || result.critical) {
+    const tag = document.createElement('small');
+    tag.textContent = kind === 'hero' ? 'to you' : 'critical';
+    pop.append(tag);
+  }
+  backEl.append(pop);
+  setTimeout(() => pop.remove(), 1500);
 }
 // Battle's reply carries the habit's new streak, so the chip updates at once.
 function withHabitTime(state, key, at, result) {
@@ -1269,6 +1334,7 @@ function renderState(state) {
     const hpText = Math.round(curHp).toLocaleString() + ' / ' + Math.round(maxHp).toLocaleString();
     $('hpFill').style.width = pct + '%';
     $('scFill').style.width = pct + '%';
+    $('scTrail').style.width = pct + '%';
     $('hpNum').textContent = hpText;
     $('scHp').textContent = hpText + ' HP';
     $('hpHud').hidden = false;
