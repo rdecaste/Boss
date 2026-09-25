@@ -90,8 +90,17 @@ body{width:100vw;height:100vh;height:100dvh}
 .tile .charge{position:absolute;top:0;bottom:0;left:0;width:0;background:linear-gradient(90deg,transparent,var(--tier,var(--warm)));opacity:.3;pointer-events:none}
 .tile.is-charging .charge{width:100%;transition:width var(--hold-ms) linear}
 .tile.is-charging{transform:scale(.98);transition:transform 120ms ease}
-.tile.is-busy{opacity:.6}
-.tile.is-busy .tile-since b::after{content:'…'}
+/* A tap answers at once: the tile punches and flashes, reads "now", and a
+   light sweeps its bottom edge until Battle's reply brings the damage. Taps
+   on other tiles meanwhile wait their turn under a QUEUED chip. */
+.tile.strike{animation:strike 280ms ease-out}
+.tile.strike .charge{width:100%;animation:burst 520ms ease-out forwards}
+@keyframes strike{0%{transform:scale(.95)}45%{transform:scale(1.03)}100%{transform:none}}
+@keyframes burst{0%{opacity:.75}100%{opacity:0}}
+.tile.is-sending::after{content:'';position:absolute;left:0;right:0;bottom:0;height:2px;background:linear-gradient(90deg,transparent,var(--tier,var(--warm)),transparent) no-repeat;background-size:50% 100%;animation:sweep 900ms linear infinite}
+@keyframes sweep{from{background-position:-100% 0}to{background-position:200% 0}}
+.tile-queued{flex:none;padding:1px 5px;border-radius:5px;font-size:8.5px;font-weight:900;letter-spacing:.08em;color:var(--dim);border:1px dashed rgba(255,255,255,.3)}
+.tile:not(.is-queued) .tile-queued{display:none}
 #workoutTiles .tile-last{font-size:9.5px}
 .pop{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);font-size:22px;font-weight:900;letter-spacing:-.02em;color:var(--warm);text-shadow:0 2px 10px rgba(0,0,0,.8);pointer-events:none;animation:pop 1100ms ease-out forwards;white-space:nowrap}
 .pop.crit{color:var(--hot);font-size:26px}
@@ -271,7 +280,7 @@ body{width:100vw;height:100vh;height:100dvh}
 .front.stage-3 .hud-bottom .hp-fill{background:linear-gradient(90deg,#ff2d2d,#ff6a3d);animation:blink 1s infinite}
 .pop.big{top:38%;z-index:7;font-size:34px}
 @media(prefers-reduced-motion:reduce){.front.shake,.front.stage-3 .fx-vignette,.front.stage-3 .fx-flicker,.front.stage-3 .stage-tag,.front.stage-3 .hud-bottom .hp-fill{animation:none}.hp-trail{transition:none}}
-@media(prefers-reduced-motion:reduce){.card{transition:none}.hero-video{transition:none}.hp-fill{transition:none}.hit,.row{transition:none}.pop{animation-duration:1ms}}
+@media(prefers-reduced-motion:reduce){.tile.strike,.tile.strike .charge{animation:none}.tile.is-sending::after{animation-duration:3s}.card{transition:none}.hero-video{transition:none}.hp-fill{transition:none}.hit,.row{transition:none}.pop{animation-duration:1ms}}
 </style>
 </head>
 <body>
@@ -611,7 +620,7 @@ function buildTile(habit) {
   tile.type = 'button';
   tile.className = 'tile' + (habit.effect === 'Hero HP' ? ' hero' : '') + (groupOf(habit) === 'workout' ? ' workout' : '');
   tile.dataset.key = habit.key;
-  tile.innerHTML = '<span class="tile-ic"></span><span class="tile-body"><span class="tile-top"><span class="tile-name"></span><span class="ko" hidden>KO</span></span>'
+  tile.innerHTML = '<span class="tile-ic"></span><span class="tile-body"><span class="tile-top"><span class="tile-name"></span><span class="ko" hidden>KO</span><span class="tile-queued">QUEUED</span></span>'
     + '<span class="tile-sub"><span class="tile-since"><b></b> <span></span></span><span class="streak" hidden></span><span class="meter" hidden><i></i><i></i><i></i></span></span>'
     + '<span class="tile-last" hidden></span></span><span class="charge"></span>';
   attachHold(tile);
@@ -789,7 +798,7 @@ function attachHold(tile) {
     tile.classList.remove('is-charging');
   };
   tile.addEventListener('pointerdown', event => {
-    if (busy || event.button > 0) return;
+    if (inFlight(tile) || event.button > 0) return;
     pointerId = event.pointerId;
     startX = event.clientX;
     startY = event.clientY;
@@ -825,33 +834,76 @@ function popOn(tile, text, cls) {
   setTimeout(() => pop.remove(), 1200);
 }
 
-async function attack(tile) {
-  if (busy) return;
-  const key = tile.dataset.key;
+// ---- Sending taps ----
+// A tap shows at once (strike, "now", section count) and joins a queue that
+// sends one tap at a time: Battle reads the boss's HP and writes it back, so
+// two at once could lose a hit. Each tap keeps the time it was made.
+const attackQueue = [];
+const tileOf = key => document.querySelector('.tile[data-key="' + CSS.escape(key) + '"]');
+const inFlight = tile => tile.classList.contains('is-queued') || tile.classList.contains('is-sending');
+function attack(tile) {
+  if (inFlight(tile)) return;
   const passcode = askPasscode();
   if (!passcode) return;
-  busy = true;
-  tile.classList.add('is-busy');
+  const key = tile.dataset.key;
   const occurredAt = new Date().toISOString();
+  const habit = ((latestState && latestState.habits) || []).find(h => h.key === key);
+  const job = { key, occurredAt, passcode, before: habit ? habit.last_attack : null };
+  tile.classList.remove('strike');
+  void tile.offsetWidth;
+  tile.classList.add('strike', 'is-queued');
+  tile.addEventListener('animationend', () => tile.classList.remove('strike'), { once: true });
+  if (navigator.vibrate) navigator.vibrate(12);
+  if (latestState) {
+    latestState = withHabitTime(latestState, key, occurredAt);
+    renderState(latestState);
+  }
+  attackQueue.push(job);
+  sendAttacks();
+}
+// A tap that failed gives back the habit's previous time, unless something newer came in.
+function undoTap(job) {
+  if (!latestState) return;
+  const habit = (latestState.habits || []).find(h => h.key === job.key);
+  if (!habit || habit.last_attack !== job.occurredAt) return;
+  latestState = withHabitTime(latestState, job.key, job.before);
+  renderState(latestState);
+}
+async function sendAttacks() {
+  if (busy || !attackQueue.length) return;
+  const job = attackQueue.shift();
+  const tile = tileOf(job.key);
+  busy = true;
+  if (tile) tile.classList.replace('is-queued', 'is-sending');
   try {
-    const data = await post(ATTACK_URL, { key, request_id: crypto.randomUUID(), occurred_at: occurredAt, passcode });
+    const data = await post(ATTACK_URL, { key: job.key, request_id: crypto.randomUUID(), occurred_at: job.occurredAt, passcode: job.passcode });
     const result = data.result ? Object.assign({}, data.result, { event_id: data.event_id }) : data;
-    if (result.code === 'bad_passcode') savePasscode('');
+    if (result.code === 'bad_passcode') {
+      savePasscode('');
+      // The taps behind this one carry the same passcode.
+      for (const queued of attackQueue.splice(0)) { undoTap(queued); const t = tileOf(queued.key); if (t) t.classList.remove('is-queued'); }
+    }
     if (!result.ok) throw new Error(result.text || result.message || 'Attack failed');
-    savePasscode(passcode);
+    savePasscode(job.passcode);
+    const at = tileOf(job.key);
     if (result.code === 'hit') {
-      popOn(tile, (result.critical ? '⚡ −' : '−') + result.damage, result.critical ? 'crit' : '');
-      applyLocal(withHit(latestState, result, key), [{ kind: 'add', id: String(result.event_id || '').replace(/-/g, '') }]);
+      if (at) popOn(at, (result.critical ? '⚡ −' : '−') + result.damage, result.critical ? 'crit' : '');
+      applyLocal(withHit(latestState, result, job.key), [{ kind: 'add', id: String(result.event_id || '').replace(/-/g, '') }]);
     } else if (result.code === 'hero_hit') {
-      popOn(tile, '−' + result.damage + ' you', 'hurt');
-      applyLocal(withHeroHit(latestState, result, key, occurredAt), [{ kind: 'add', id: String(result.event_id || '').replace(/-/g, '') }]);
+      if (at) popOn(at, '−' + result.damage + ' you', 'hurt');
+      applyLocal(withHeroHit(latestState, result, job.key, job.occurredAt), [{ kind: 'add', id: String(result.event_id || '').replace(/-/g, '') }]);
+    } else {
+      undoTap(job);
     }
     showToast(result.text || result.message);
   } catch (error) {
+    undoTap(job);
     showToast(failMessage(error), true);
   } finally {
     busy = false;
-    tile.classList.remove('is-busy');
+    const t = tileOf(job.key);
+    if (t) t.classList.remove('is-sending');
+    sendAttacks();
   }
 }
 // Battle's reply carries the habit's new streak, so the chip updates at once.
@@ -997,7 +1049,7 @@ function attachSwipe(row) {
 }
 
 async function revertRow(row) {
-  if (busy) return;
+  if (busy || attackQueue.length) return;
   const id = row.dataset.id;
   const passcode = askPasscode();
   if (!passcode) { closeRow(row); return; }
@@ -1016,12 +1068,14 @@ async function revertRow(row) {
     busy = false;
     applyLocal(withoutHit(latestState, id, result), [{ kind: 'drop', id }]);
     showToast(result.message);
+    sendAttacks();
   } catch (error) {
     busy = false;
     row.classList.remove('is-busy');
     closeRow(row);
     showToast(failMessage(error), true);
     if (latestState) renderState(latestState);
+    sendAttacks();
   }
 }
 // Make answers before it republishes data.json, so the card is updated here
@@ -1295,13 +1349,17 @@ function monitorVideoLoop() {
   requestAnimationFrame(monitorVideoLoop);
 }
 async function refreshDashboard() {
+  // Taps on their way to Battle show only on this page; the file would undo them.
+  if (busy || attackQueue.length) return;
   try {
     const response = await fetch(`${STATE_URL}?t=${Date.now()}`, { cache: 'no-store' });
     if (!response.ok) return;
-    const state = pickState(await response.json());
+    const fetched = await response.json();
+    if (busy || attackQueue.length) return;
+    const state = pickState(fetched);
     latestState = state;
     // Re-rendering mid-swipe or mid-hold would pull the row or tile out from under the finger.
-    if (!busy && !openRow && !document.querySelector('.is-swiping, .is-charging')) renderState(state);
+    if (!busy && !attackQueue.length && !openRow && !document.querySelector('.is-swiping, .is-charging')) renderState(state);
     const videoUrl = state.video_url || '';
     const videoKey = String(state.video_public_id || state.video_version || videoUrl);
     if (videoUrl && videoKey !== loadedVideoKey) {
@@ -1436,7 +1494,7 @@ function buildTrophy(t) {
 let claimBusy = false;
 $('vBtn').addEventListener('click', async event => {
   event.stopPropagation();
-  if (claimBusy || busy || !latestState) return;
+  if (claimBusy || busy || attackQueue.length || !latestState) return;
   const passcode = askPasscode();
   if (!passcode) return;
   claimBusy = true;
