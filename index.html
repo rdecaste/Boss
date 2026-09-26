@@ -113,6 +113,11 @@ body{width:100vw;height:100vh;height:100dvh}
 @keyframes sweep{from{background-position:-100% 0}to{background-position:200% 0}}
 .tile-queued{flex:none;padding:1px 5px;border-radius:5px;font-size:8.5px;font-weight:900;letter-spacing:.08em;color:var(--dim);border:1px dashed rgba(255,255,255,.3)}
 .tile:not(.is-queued) .tile-queued{display:none}
+/* A weekly habit counts once per game week (Battle turns away a second hit),
+   so once done the tile rests under a DONE chip until Monday 04:00. */
+.tile.week-done{opacity:.55}
+.tile-done{flex:none;padding:1px 5px;border-radius:5px;font-size:8.5px;font-weight:900;letter-spacing:.08em;color:#7dffb0;border:1px solid rgba(125,255,176,.4)}
+.tile:not(.week-done) .tile-done,.tile.is-queued .tile-done,.tile.is-sending .tile-done{display:none}
 #workoutTiles .tile-last{font-size:9.5px}
 .pop{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);font-size:22px;font-weight:900;letter-spacing:-.02em;color:var(--warm);text-shadow:0 2px 10px rgba(0,0,0,.8);pointer-events:none;animation:pop 1100ms ease-out forwards;white-space:nowrap}
 .pop.crit{color:var(--hot);font-size:26px}
@@ -639,7 +644,7 @@ function buildTile(habit) {
   tile.type = 'button';
   tile.className = 'tile' + (habit.effect === 'Hero HP' ? ' hero' : '') + (groupOf(habit) === 'workout' ? ' workout' : '');
   tile.dataset.key = habit.key;
-  tile.innerHTML = '<span class="tile-ic"></span><span class="tile-body"><span class="tile-top"><span class="tile-name"></span><span class="ko" hidden>KO</span><span class="tile-queued">QUEUED</span></span>'
+  tile.innerHTML = '<span class="tile-ic"></span><span class="tile-body"><span class="tile-top"><span class="tile-name"></span><span class="ko" hidden>KO</span><span class="tile-queued">QUEUED</span><span class="tile-done">DONE</span></span>'
     + '<span class="tile-sub"><span class="tile-since"><b></b> <span></span></span><span class="streak" hidden></span><span class="meter" hidden><i></i><i></i><i></i></span></span>'
     + '<span class="tile-last" hidden></span></span><span class="charge"></span>';
   attachHold(tile);
@@ -662,6 +667,8 @@ function updateTile(tile, habit) {
     value.textContent = ago === null ? '—' : ago;
     unit.textContent = ago === null ? 'not yet' : (ago === 'now' ? '' : (done.strava ? 'strava' : 'ago'));
   }
+  const weekDone = doneThisWeek(habit);
+  tile.classList.toggle('week-done', weekDone);
   const fresh = done.at && Date.now() - Date.parse(done.at) < FRESH_MS;
   tile.classList.toggle('fresh', !!fresh && !hero);
   const dmg = damageOf(habit);
@@ -691,7 +698,7 @@ function updateTile(tile, habit) {
   const streakLabel = !streak ? '' : ', ' + streak.days + '-day streak' + (streak.today
     ? (streak.bonus ? ', +' + streak.bonus + '% damage' : '')
     : ', hit today to keep it' + (streak.next ? ' for +' + streak.next + '%' : ''));
-  tile.setAttribute('aria-label', label + dmgLabel + streakLabel + '. Hold to log.');
+  tile.setAttribute('aria-label', label + dmgLabel + streakLabel + (weekDone ? '. Done for this week.' : '. Hold to log.'));
 }
 setInterval(() => { if (cardEl.classList.contains('is-flipped')) renderTiles(); }, 30000);
 
@@ -706,6 +713,13 @@ function damageOf(habit) {
   const base = max / mult;
   return { min, max, tier: base <= 15 ? 1 : base <= 32 ? 2 : 3 };
 }
+// Weekly habits count once per game week, Monday 04:00 to Monday 04:00.
+function doneThisWeek(habit) {
+  if (groupOf(habit) !== 'weekly') return false;
+  const at = Date.parse(lastDone(habit).at || '');
+  return !isNaN(at) && weekKey(at) === weekKey(Date.now());
+}
+const weekDoneText = tile => (tile.querySelector('.tile-name').textContent || 'It') + ' is done for this week. It opens again Monday at 04:00.';
 // Streak: consecutive game days with a hit of this habit (Battle keeps count).
 // It is alive while the last one was today or yesterday; the bonus tiers match
 // Battle's: +10% from 3 days, +20% from 5, +30% from 7.
@@ -818,6 +832,7 @@ function attachHold(tile) {
   };
   tile.addEventListener('pointerdown', event => {
     if (inFlight(tile) || event.button > 0) return;
+    if (tile.classList.contains('week-done')) { showToast(weekDoneText(tile)); return; }
     pointerId = event.pointerId;
     startX = event.clientX;
     startY = event.clientY;
@@ -862,6 +877,7 @@ const tileOf = key => document.querySelector('.tile[data-key="' + CSS.escape(key
 const inFlight = tile => tile.classList.contains('is-queued') || tile.classList.contains('is-sending');
 function attack(tile) {
   if (inFlight(tile)) return;
+  if (tile.classList.contains('week-done')) { showToast(weekDoneText(tile)); return; }
   const passcode = askPasscode();
   if (!passcode) return;
   const key = tile.dataset.key;
