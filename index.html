@@ -117,6 +117,8 @@ body{width:100vw;height:100vh;height:100dvh}
 .pop{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);font-size:22px;font-weight:900;letter-spacing:-.02em;color:var(--warm);text-shadow:0 2px 10px rgba(0,0,0,.8);pointer-events:none;animation:pop 1100ms ease-out forwards;white-space:nowrap}
 .pop.crit{color:var(--hot);font-size:26px}
 .pop.hurt{color:#ff8f8f}
+.pop.heal{top:66%;color:#7dffa0}
+.heals{flex:none;font-size:10px;line-height:1}
 @keyframes pop{0%{opacity:0;transform:translate(-50%,-30%) scale(.6)}15%{opacity:1;transform:translate(-50%,-50%) scale(1.15)}70%{opacity:1}100%{opacity:0;transform:translate(-50%,-140%) scale(1)}}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:12px}
 .stat{padding:8px 6px 7px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.035);text-align:center;min-width:0}
@@ -639,7 +641,7 @@ function buildTile(habit) {
   tile.type = 'button';
   tile.className = 'tile' + (habit.effect === 'Hero HP' ? ' hero' : '') + (groupOf(habit) === 'workout' ? ' workout' : '');
   tile.dataset.key = habit.key;
-  tile.innerHTML = '<span class="tile-ic"></span><span class="tile-body"><span class="tile-top"><span class="tile-name"></span><span class="ko" hidden>KO</span><span class="tile-queued">QUEUED</span></span>'
+  tile.innerHTML = '<span class="tile-ic"></span><span class="tile-body"><span class="tile-top"><span class="tile-name"></span><span class="heals" hidden>💚</span><span class="ko" hidden>KO</span><span class="tile-queued">QUEUED</span></span>'
     + '<span class="tile-sub"><span class="tile-since"><b></b> <span></span></span><span class="streak" hidden></span><span class="meter" hidden><i></i><i></i><i></i></span></span>'
     + '<span class="tile-last" hidden></span></span><span class="charge"></span>';
   attachHold(tile);
@@ -676,6 +678,8 @@ function updateTile(tile, habit) {
   tile.classList.toggle('ko-maybe', ko === 'maybe');
   tile.querySelector('.ko').hidden = !ko;
   tile.querySelector('.ko').textContent = ko === 'maybe' ? 'KO?' : 'KO';
+  const heals = healOf(habit);
+  tile.querySelector('.heals').hidden = !heals;
   const streak = streakOf(habit);
   const chip = tile.querySelector('.streak');
   chip.hidden = !streak;
@@ -691,7 +695,8 @@ function updateTile(tile, habit) {
   const streakLabel = !streak ? '' : ', ' + streak.days + '-day streak' + (streak.today
     ? (streak.bonus ? ', +' + streak.bonus + '% damage' : '')
     : ', hit today to keep it' + (streak.next ? ' for +' + streak.next + '%' : ''));
-  tile.setAttribute('aria-label', label + dmgLabel + streakLabel + '. Hold to log.');
+  const healLabel = heals ? ', heals you ' + heals.min + ' to ' + heals.max + ' HP' : '';
+  tile.setAttribute('aria-label', label + dmgLabel + healLabel + streakLabel + '. Hold to log.');
 }
 setInterval(() => { if (cardEl.classList.contains('is-flipped')) renderTiles(); }, 30000);
 
@@ -705,6 +710,15 @@ function damageOf(habit) {
   const mult = Number(habit.effect === 'Hero HP' ? latestState && latestState.hero_multiplier : latestState && latestState.power_multiplier) || 1;
   const base = max / mult;
   return { min, max, tier: base <= 15 ? 1 : base <= 32 ? 2 : 3 };
+}
+// Healing habits give the hero HP back on top of their damage (Battle rolls
+// heal_min to heal_max, not scaled by level), up to heal_cap HP per game day.
+function healOf(habit) {
+  const min = Number(habit.heal_min), max = Number(habit.heal_max);
+  return habit.heal_max != null && max > 0 ? { min: isFinite(min) ? min : 0, max } : null;
+}
+function healedToday(state) {
+  return state && state.hero_heal_day === dayKey(Date.now()) ? Number(state.hero_healed_today) || 0 : 0;
 }
 // Streak: consecutive game days with a hit of this habit (Battle keeps count).
 // It is alive while the last one was today or yesterday; the bonus tiers match
@@ -906,10 +920,12 @@ async function sendAttacks() {
     savePasscode(job.passcode);
     const at = tileOf(job.key);
     if (result.code === 'hit') {
-      if (at) popOn(at, (result.critical ? '⚡ −' : '−') + result.damage, result.critical ? 'crit' : '');
+      const heal = Number(result.heal) || 0;
+      if (at && (Number(result.damage) > 0 || !heal)) popOn(at, (result.critical ? '⚡ −' : '−') + result.damage, result.critical ? 'crit' : '');
+      if (at && heal) popOn(at, '+' + heal + ' HP', 'heal');
       const before = hpShare(latestState, 'boss');
       applyLocal(withHit(latestState, result, job.key), [{ kind: 'add', id: String(result.event_id || '').replace(/-/g, '') }]);
-      landOnPad(result, 'boss', before);
+      if (Number(result.damage) > 0 || !heal) landOnPad(result, 'boss', before);
     } else if (result.code === 'hero_hit') {
       if (at) popOn(at, '−' + result.damage + ' you', 'hurt');
       applyLocal(withHeroHit(latestState, result, job.key, job.occurredAt), [{ kind: 'add', id: String(result.event_id || '').replace(/-/g, '') }]);
@@ -1000,6 +1016,15 @@ function withHit(state, result, key) {
   const entry = { id, kind: 'boss', at: result.occurred_at, habit: result.habit, damage: Number(result.damage) || 0, crit: result.critical ? 1 : 0 };
   if (Number(result.form_bonus) > 1) entry.form_bonus = Number(result.form_bonus);
   if (Number(result.streak_hit) >= 3) entry.streak = Number(result.streak_hit);
+  // A healing habit also healed the hero; the reply carries the hero's new HP.
+  const heal = Number(result.heal) || 0;
+  if (heal > 0) {
+    entry.heal = heal;
+    next.hero_hp = Number(result.hero_hp);
+    if (Number(result.hero_max_hp) > 0) next.hero_max_hp = Number(result.hero_max_hp);
+    next.hero_healed_today = healedToday(state) + heal;
+    next.hero_heal_day = dayKey(Date.now());
+  }
   entry.hp_after = Number(result.hp_after);
   log.unshift(entry);
   next.log = log;
@@ -1163,6 +1188,13 @@ function withoutHit(state, id, result) {
   } else {
     next.current_hp = hpAfter;
     if (result.hp_max) next.max_hp = Number(result.hp_max);
+    // Reverting a healing habit's hit takes its heal back too.
+    const heal = Number(result.heal) || 0;
+    if (heal > 0 && result.hero_hp != null) {
+      next.hero_hp = Number(result.hero_hp);
+      const gone = (state.log || []).find(hit => hit.id === id);
+      if (gone && state.hero_heal_day === dayKey(Date.parse(gone.at))) next.hero_healed_today = Math.max(0, (Number(state.hero_healed_today) || 0) - heal);
+    }
   }
   const log = (state.log || []).filter(hit => hit.id !== id).map(hit => Object.assign({}, hit));
   let hp = Number(next.max_hp) || 0;
@@ -1310,6 +1342,7 @@ function appendHitRow(hit) {
   if (hit.effort) boosts.push('×' + hit.effort + ' effort');
   if (hit.form_bonus) boosts.push('+' + Math.round((hit.form_bonus - 1) * 100) + '% form');
   if (hit.streak) boosts.push('🔥' + hit.streak + '-day +' + streakBonus(hit.streak) + '%');
+  if (hit.heal) boosts.push('💚 +' + hit.heal + ' HP');
   when.textContent = formatWhen(hit.at) + (boosts.length ? ' · ' + boosts.join(' · ') : '');
   const dmg = document.createElement('div');
   dmg.className = 'hit-dmg';
@@ -1368,7 +1401,9 @@ function renderState(state) {
   if (heroShown) {
     const heroHp = Number(state.hero_hp);
     $('heroName').textContent = state.hero_name || 'Hero';
-    $('heroHp').textContent = Math.round(heroHp).toLocaleString() + ' / ' + Math.round(heroMax).toLocaleString() + ' HP';
+    const healed = healedToday(state);
+    $('heroHp').textContent = Math.round(heroHp).toLocaleString() + ' / ' + Math.round(heroMax).toLocaleString() + ' HP'
+      + (healed > 0 ? ' · 💚 ' + healed + '/' + (Number(state.heal_cap) || 50) + ' today' : '');
     $('heroFill').style.width = Math.max(0, Math.min(100, (heroHp / heroMax) * 100)) + '%';
   }
   renderLog(state);
