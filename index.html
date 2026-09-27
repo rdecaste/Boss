@@ -534,9 +534,9 @@ const ENGINE_URL = 'https://quest-engine.quest-engine.workers.dev';
 const STATE_URL = ENGINE_URL + '/boss';
 const ATTACK_URL = ENGINE_URL + '/attack';
 const REVERT_URL = ENGINE_URL + '/revert';
-// Make scenario 9867207 "Boss — Claim Victory & Summon Next", passcode-checked
-// like the two above. Claiming a combat victory starts Boss Spawn.
-const CLAIM_URL = 'https://hook.eu2.make.com/5w5cvi610z5actjsftn78b91peyd1usn';
+// Claiming a combat victory (passcode-checked like the two above) starts the
+// Worker's boss spawn: a new image and video, then the new fight.
+const CLAIM_URL = ENGINE_URL + '/claim';
 const STUCK_MS = 21 * 60 * 1000;
 const PASSCODE_KEY = 'boss-revert-passcode';
 const TAB_KEY = 'boss-tab';
