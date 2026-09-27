@@ -62,8 +62,8 @@ body{width:100vw;height:100vh;height:100dvh}
 .pop.hitpop{top:92px;z-index:8;font-size:40px;animation-duration:1400ms}
 .pop.hitpop.crit{font-size:46px}
 .pop.hitpop small{display:block;margin-top:2px;font-size:11px;font-weight:850;letter-spacing:.14em;text-align:center;text-transform:uppercase}
-.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:12px;padding:3px;border-radius:11px;background:rgba(255,255,255,.06)}
-.tab{border:0;margin:0;padding:7px 0;border-radius:8px;background:transparent;color:var(--dim);font:inherit;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;cursor:pointer}
+.tabs{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-top:12px;padding:3px;border-radius:11px;background:rgba(255,255,255,.06)}
+.tab{border:0;margin:0;padding:7px 0;border-radius:8px;background:transparent;color:var(--dim);font:inherit;font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
 .tab[aria-selected="true"]{background:rgba(255,255,255,.12);color:#fff}
 .panel{flex:1;min-height:0;display:flex;flex-direction:column}
 .panel[hidden],.tiles[hidden],.group-label[hidden],.hero-line[hidden],.hp-track[hidden]{display:none}
@@ -244,6 +244,26 @@ body{width:100vw;height:100vh;height:100dvh}
 .lore-facts span{padding:5px 9px;border:1px solid var(--line);border-radius:999px;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
 
 /* Hall of Fame: every boss beaten in combat, newest first */
+.loot{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:12px 0}
+.loot-card{padding:12px;border:1px solid rgba(255,159,28,.25);border-radius:14px;background:linear-gradient(140deg,rgba(255,159,28,.1),rgba(255,255,255,.02) 60%)}
+.loot-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.loot-count{font-size:11px;font-weight:850;letter-spacing:.1em;color:#ffc23a}
+.loot-balls{display:flex;justify-content:space-between;gap:4px;margin:12px 0 4px}
+.loot-balls .ball{width:36px;height:36px}
+.loot-balls .ball i{font-size:9px;line-height:8px;padding:7px}
+.loot-summon{display:block;width:100%;margin-top:10px;padding:9px 10px}
+.loot-summon[hidden]{display:none}
+.loot-about{margin:10px 0 0;font-size:12px;line-height:1.45;color:var(--muted)}
+.loot-about b{color:#fff;font-weight:800}
+.loot-sub{margin:14px 0 6px;font-size:9px;font-weight:850;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.loot-sub[hidden]{display:none}
+.loot-list{margin:0;padding:0;list-style:none;display:grid;gap:5px}
+.loot-list li{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:#fff}
+.loot-list li.empty{color:var(--dim);font-weight:600}
+.loot-list .when{margin-left:auto;flex:none;font-size:11px;color:var(--dim)}
+.loot-list .where{color:var(--muted);font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.loot-list .ball{flex:none;width:18px;height:18px}
+.loot-list .ball i{font-size:5px;line-height:4px;padding:4px}
 .hall{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:12px 0}
 .hall-sum{margin:0 2px 10px;font-size:9px;font-weight:850;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
 .hall-sum b{color:#ffd35a}
@@ -303,6 +323,19 @@ body{width:100vw;height:100vh;height:100dvh}
 .field-txt{min-width:0}
 .field-name{font-size:13px;font-weight:850;letter-spacing:-.01em}
 .field-fx{margin-top:1px;font-size:11px;font-weight:700;color:var(--muted);line-height:1.3}
+.field{cursor:pointer;-webkit-tap-highlight-color:transparent}
+.field-txt{flex:1}
+.field-chev{flex:none;width:8px;height:8px;margin-right:2px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);transition:transform .2s ease}
+.field.open .field-chev{transform:rotate(-135deg)}
+.field-more{margin:6px 0 0;padding:10px 12px;border:1px solid rgba(255,211,90,.18);border-radius:12px;background:rgba(255,255,255,.03);font-size:12px;line-height:1.45;color:var(--muted)}
+.field-more[hidden]{display:none}
+.field-more p{margin:0}
+.field-more p+p{margin-top:6px}
+.field-more b{color:#fff;font-weight:800}
+.field-more .fm-hits{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.field-more .fm-hits span{padding:2px 7px;border-radius:8px;background:rgba(255,255,255,.06);font-size:11px;font-weight:700;color:#fff}
+.field-more .fm-when{margin-top:8px;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+@media(prefers-reduced-motion:reduce){.field-chev{transition:none}}
 .field.calm{border-color:var(--line);background:rgba(255,255,255,.03)}
 .field.enraged{border-color:rgba(255,95,95,.35);background:linear-gradient(120deg,rgba(255,95,95,.12),rgba(255,255,255,.02))}
 .fieldtag{flex:none;padding:1px 5px;border-radius:5px;font-size:9px;font-weight:900;letter-spacing:.04em;color:#1a1200;background:#ffd35a}
@@ -320,6 +353,7 @@ body{width:100vw;height:100vh;height:100dvh}
 /* Dragon Balls: seven to find, then Shenron grants one wish */
 .radar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:10px 0 0;padding:8px 12px;border:1px solid rgba(255,159,28,.25);border-radius:12px;background:linear-gradient(120deg,rgba(255,159,28,.1),rgba(255,255,255,.02))}
 .radar[hidden]{display:none}
+.radar{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .balls{display:flex;gap:5px}
 .ball{position:relative;width:20px;height:20px;border-radius:50%;background:rgba(255,255,255,.07);border:1px dashed rgba(255,255,255,.18)}
 .ball.on{border:0;background:radial-gradient(circle at 35% 30%,#fff6c8 0,#ffc23a 22%,#ff8a00 60%,#c24e00 100%);box-shadow:0 0 10px rgba(255,150,20,.55)}
@@ -404,11 +438,14 @@ body{width:100vw;height:100vh;height:100dvh}
 <button class="tab" type="button" role="tab" id="tabLog" aria-controls="panelLog" aria-selected="false">Log</button>
 <button class="tab" type="button" role="tab" id="tabLore" aria-controls="panelLore" aria-selected="false">Lore</button>
 <button class="tab" type="button" role="tab" id="tabHall" aria-controls="panelHall" aria-selected="false">Hall</button>
+<button class="tab" type="button" role="tab" id="tabLoot" aria-controls="panelLoot" aria-selected="false">Loot</button>
 </div>
 <div class="panel" id="panelAttack" role="tabpanel" aria-labelledby="tabAttack">
 <div class="pad" id="pad">
-<div class="field" id="field" hidden><span class="field-ic" id="fieldIc"></span><span class="field-txt"><span class="label">Today's battlefield</span><div class="field-name" id="fieldName"></div><div class="field-fx" id="fieldFx"></div></span></div>
-<div class="radar" id="radar" hidden><span class="balls" id="balls"></span><span class="radar-note" id="radarNote"></span><button class="summon" type="button" id="summonBtn" hidden>Summon</button></div>
+<div class="field" id="field" role="button" tabindex="0" aria-expanded="false" aria-controls="fieldMore" hidden><span class="field-ic" id="fieldIc"></span><span class="field-txt"><span class="label">Today's battlefield</span><div class="field-name" id="fieldName"></div><div class="field-fx" id="fieldFx"></div></span><span class="field-chev" aria-hidden="true"></span></div>
+<div class="field-more" id="fieldMore" hidden></div>
+<div class="radar" id="radar" role="button" tabindex="0" aria-expanded="false" aria-controls="radarMore" hidden><span class="balls" id="balls"></span><span class="radar-note" id="radarNote"></span><button class="summon" type="button" id="summonBtn" hidden>Summon</button></div>
+<div class="field-more" id="radarMore" hidden></div>
 <div class="wish-chip" id="wishChip" hidden></div>
 <div class="power" id="power" hidden></div>
 <section class="sec" data-sec="morning" hidden><button class="sec-head" type="button" aria-expanded="true"><span class="label">☀️ Morning</span><span class="sec-count"></span><span class="chev" aria-hidden="true"></span></button><div class="tiles" id="morningTiles"></div></section>
@@ -453,6 +490,21 @@ body{width:100vw;height:100vh;height:100dvh}
 <ul class="hall-list" id="hallList"></ul>
 </div>
 <div class="hint">Every boss you beat hangs here</div>
+</div>
+<div class="panel" id="panelLoot" role="tabpanel" aria-labelledby="tabLoot" hidden>
+<div class="loot">
+<section class="loot-card">
+<div class="loot-head"><span class="label">🐉 Dragon Balls</span><span class="loot-count" id="lootCount"></span></div>
+<div class="loot-balls" id="lootBalls"></div>
+<button class="summon loot-summon" type="button" id="lootSummon" hidden>Summon Shenron</button>
+<p class="loot-about" id="lootAbout"></p>
+<div class="loot-sub">Found</div>
+<ul class="loot-list" id="lootFound"></ul>
+<div class="loot-sub" id="lootWishHead" hidden>Wishes granted</div>
+<ul class="loot-list" id="lootWishes"></ul>
+</section>
+</div>
+<div class="hint">Your loot stays with you from boss to boss</div>
 </div>
 <div class="shenron" id="shenron" hidden role="dialog" aria-modal="true" aria-labelledby="shTitle">
 <div class="sh-panel">
@@ -547,7 +599,7 @@ document.addEventListener('visibilitychange', () => {
 cardEl.addEventListener('click', event => {
   // A swipe or hold ends in a click on some browsers; an open row closes on the next tap.
   if (suppressClick) { suppressClick = false; return; }
-  if (event.target.closest('.row-action, .tile, .tabs, .filters, .v-btn, .radar, .shenron, .field-reveal')) return;
+  if (event.target.closest('.row-action, .tile, .tabs, .filters, .v-btn, .radar, .shenron, .field-reveal, .loot')) return;
   if (openRow) { closeOpenRow(); return; }
   if (busy) return;
   const flipped = cardEl.classList.contains('is-flipped');
@@ -564,7 +616,7 @@ cardEl.addEventListener('keydown', event => {
 });
 cardEl.addEventListener('contextmenu', event => event.preventDefault());
 
-const TABS = ['attack', 'log', 'lore', 'hall'];
+const TABS = ['attack', 'log', 'lore', 'hall', 'loot'];
 function showTab(name) {
   const shown = TABS.includes(name) ? name : 'attack';
   for (const tab of TABS) {
@@ -579,6 +631,7 @@ $('tabAttack').addEventListener('click', () => showTab('attack'));
 $('tabLog').addEventListener('click', () => showTab('log'));
 $('tabLore').addEventListener('click', () => showTab('lore'));
 $('tabHall').addEventListener('click', () => showTab('hall'));
+$('tabLoot').addEventListener('click', () => showTab('loot'));
 try { showTab(localStorage.getItem(TAB_KEY) || 'attack'); } catch (_) { showTab('attack'); }
 
 let logFilter = 'all';
@@ -830,7 +883,91 @@ function renderField() {
   $('fieldIc').textContent = f.icon;
   $('fieldName').textContent = f.name;
   $('fieldFx').textContent = f.fx;
+  if (!$('fieldMore').hidden) renderFieldMore();
 }
+// Tapping the battlefield explains it: what it does, which tiles it touches
+// and when it changes. Only today's; the next one stays a surprise.
+// The numbers mirror Battle module 7.
+function fieldDetailOf(f, state) {
+  const crit = Number(state && state.crit_chance) || 0.05;
+  const pct = x => Math.round(x * 100) + '%';
+  switch (f.key) {
+    case 'calm': return 'A quiet day. No boosts and no penalties: every habit hits the boss exactly as usual.';
+    case 'gravity': return 'Every <b>workout</b> does <b>1.5× damage</b> to the boss, both the workout tiles and synced Strava sessions.';
+    case 'dawn': return 'Every <b>Morning</b> habit does <b>1.5× damage</b> to the boss.';
+    case 'dusk': return 'Every <b>Evening</b> habit does <b>1.5× damage</b> to the boss.';
+    case 'zenkai': return 'Every hit on the boss does <b>20% more damage</b>, whatever the habit, Strava workouts included.';
+    case 'crit': return 'Your crit chance goes from <b>' + pct(crit) + '</b> to <b>' + pct(crit + 0.15) + '</b> on every hit. A crit does 1.5× damage.';
+    case 'senzu': return 'Healing habits heal Goku <b>twice as much</b>, and you can heal up to <b>100 HP</b> today instead of ' + (Number(state && state.heal_cap) || 50) + '.';
+    case 'enraged': return 'Bad habits hurt Goku <b>twice as much</b> today. Good habits hit the boss as usual.';
+    case 'dragon': return dragonBallsAbout(state) + ' Today they drop <b>three times as often</b>, and a Strava workout is the best chance.';
+    default: return '';
+  }
+}
+// What Dragon Balls are, for the Dragon radar field and the radar itself.
+// Shenron's wishes stay a surprise until all seven are found.
+function ballCountOf(state) {
+  const mask = Math.max(0, Math.min(ALL_BALLS, Number(state && state.dragon_balls) || 0));
+  let count = 0;
+  for (let n = 0; n < 7; n++) if (mask & (1 << n)) count++;
+  return count;
+}
+function dragonBallsAbout(state) {
+  const count = ballCountOf(state);
+  const have = count === 7 ? 'You have <b>all seven</b>: tap Summon.'
+    : count ? 'You have <b>' + count + ' of 7</b>.' : 'You have none yet. Once you find the first, a radar with your balls appears on the Attack tab.';
+  return '<b>Dragon Balls</b> are rare drops. Now and then a hit on the boss leaves one behind. There are seven, and when you hold all seven, <b>Shenron</b> the eternal dragon appears and grants you one wish. ' + have;
+}
+function nextRolloverOf(now) {
+  const today = dayKey(now);
+  let t = now;
+  while (dayKey(t) === today) t += 3600000;
+  t -= 3600000;
+  while (dayKey(t) === today) t += 60000;
+  return t;
+}
+function renderFieldMore() {
+  const f = todayField();
+  const state = latestState || {};
+  const habits = Array.isArray(state.habits) ? state.habits : [];
+  const touched = habits.filter(h => fieldBoostOf(h, healOf(h)));
+  const box = $('fieldMore');
+  box.replaceChildren();
+  const intro = document.createElement('p');
+  intro.textContent = 'Every day at 04:00 a new battlefield rolls. It changes how hits land, for that game day only.';
+  const detail = document.createElement('p');
+  detail.innerHTML = fieldDetailOf(f, state);
+  box.append(intro, detail);
+  if (touched.length) {
+    const hits = document.createElement('div');
+    hits.className = 'fm-hits';
+    for (const h of touched) {
+      const chip = document.createElement('span');
+      chip.textContent = (h.icon ? h.icon + ' ' : '') + (h.name || h.key) + ' ' + fieldBoostOf(h, healOf(h)).tag;
+      hits.append(chip);
+    }
+    box.append(hits);
+  }
+  const left = Math.max(0, nextRolloverOf(Date.now()) - Date.now());
+  const hours = Math.floor(left / 3600000);
+  const mins = Math.floor((left % 3600000) / 60000);
+  const when = document.createElement('div');
+  when.className = 'fm-when';
+  when.textContent = 'Changes in ' + (hours ? hours + 'h ' : '') + mins + 'm · the next one is a surprise';
+  box.append(when);
+}
+function toggleFieldMore(event) {
+  if (event) event.stopPropagation();
+  const open = $('fieldMore').hidden;
+  if (open) renderFieldMore();
+  $('fieldMore').hidden = !open;
+  $('field').classList.toggle('open', open);
+  $('field').setAttribute('aria-expanded', String(open));
+}
+$('field').addEventListener('click', toggleFieldMore);
+$('field').addEventListener('keydown', event => {
+  if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); toggleFieldMore(event); }
+});
 // The tiles the day's battlefield boosts carry a small tag.
 function fieldBoostOf(habit, heals) {
   const f = todayField();
@@ -902,6 +1039,8 @@ function renderRadar(state) {
   }
   shownBalls = mask;
   $('radar').hidden = count === 0;
+  if (count === 0) { $('radarMore').hidden = true; $('radar').setAttribute('aria-expanded', 'false'); }
+  else if (!$('radarMore').hidden) renderRadarMore();
   $('radar').setAttribute('aria-label', count + ' of 7 Dragon Balls');
   $('radarNote').textContent = count === 7 ? '' : count + ' / 7';
   $('summonBtn').hidden = count !== 7;
@@ -929,6 +1068,105 @@ function openShenron() {
 }
 function closeShenron() { $('shenron').hidden = true; }
 $('summonBtn').addEventListener('click', event => { event.stopPropagation(); openShenron(); });
+$('lootSummon').addEventListener('click', event => { event.stopPropagation(); openShenron(); });
+
+// ---- Loot ----
+// Every Dragon Ball found and wish granted, across all bosses. Publish writes
+// dragon_log; Battle's tap patch only adds the hit to log, so this fight's
+// finds are merged in from there until the next full rebuild.
+function lootLogOf(state) {
+  const seen = new Set();
+  const all = [];
+  const add = entry => { if (entry && entry.id && !seen.has(entry.id)) { seen.add(entry.id); all.push(entry); } };
+  for (const e of Array.isArray(state.dragon_log) ? state.dragon_log : []) add(e);
+  for (const hit of Array.isArray(state.log) ? state.log : []) {
+    if (hit.wish) add({ id: hit.id, at: hit.at, habit: hit.habit, boss: state.boss_name || '', wish: 1 });
+    else if (Number(hit.dragon_ball) > 0) add({ id: hit.id, at: hit.at, habit: hit.habit, boss: state.boss_name || '', ball: Number(hit.dragon_ball) });
+  }
+  const ms = s => { const t = Date.parse(s); return isNaN(t) ? 0 : t; };
+  return all.sort((a, b) => ms(b.at) - ms(a.at));
+}
+let lootSignature = '';
+function renderLoot(state) {
+  const mask = Math.max(0, Math.min(ALL_BALLS, Number(state.dragon_balls) || 0));
+  const entries = lootLogOf(state);
+  const signature = JSON.stringify([mask, entries]);
+  if (signature === lootSignature) return;
+  lootSignature = signature;
+  const count = ballCountOf(state);
+  $('lootCount').textContent = count + ' / 7';
+  const balls = $('lootBalls');
+  balls.replaceChildren();
+  for (let n = 1; n <= 7; n++) {
+    const on = !!(mask & (1 << (n - 1)));
+    const b = ballEl(n, on);
+    b.title = on ? n + '-star ball' : 'Not found yet';
+    balls.append(b);
+  }
+  $('lootSummon').hidden = count !== 7;
+  $('lootAbout').innerHTML = dragonBallsAbout(state);
+  const when = at => { const t = Date.parse(at); return isNaN(t) ? '' : dayLabel(dayKey(t)); };
+  const row = (lead, main, where, at) => {
+    const li = document.createElement('li');
+    const name = document.createElement('span');
+    name.textContent = main;
+    const place = document.createElement('span');
+    place.className = 'where';
+    place.textContent = where ? 'on ' + where : '';
+    const day = document.createElement('span');
+    day.className = 'when';
+    day.textContent = when(at);
+    li.append(lead, name, place, day);
+    return li;
+  };
+  // The balls held now: the newest find of each since the last wish.
+  const lastWish = entries.find(e => e.wish);
+  const since = lastWish ? Date.parse(lastWish.at) || 0 : 0;
+  const found = [];
+  for (let n = 1; n <= 7; n++) {
+    if (!(mask & (1 << (n - 1)))) continue;
+    const find = entries.find(e => e.ball === n && (Date.parse(e.at) || 0) >= since);
+    found.push({ n, find });
+  }
+  const foundList = $('lootFound');
+  foundList.replaceChildren();
+  if (!found.length) {
+    const empty = document.createElement('li');
+    empty.className = 'empty';
+    empty.textContent = lastWish ? 'The balls scattered after your last wish. Go find them again.' : 'None yet. Any hit on the boss could drop one.';
+    foundList.append(empty);
+  }
+  for (const { n, find } of found) {
+    foundList.append(row(ballEl(n, true), find ? find.habit : n + '-star ball', find ? find.boss : '', find ? find.at : ''));
+  }
+  const wishes = entries.filter(e => e.wish);
+  $('lootWishHead').hidden = !wishes.length;
+  const wishList = $('lootWishes');
+  wishList.replaceChildren();
+  for (const w of wishes) {
+    const lead = document.createElement('span');
+    lead.textContent = '🐉';
+    wishList.append(row(lead, String(w.habit || 'Shenron').replace(/^🐉\s*/, ''), w.boss, w.at));
+  }
+}
+// Tapping the radar says what Dragon Balls are.
+function renderRadarMore() {
+  const p = document.createElement('p');
+  p.innerHTML = dragonBallsAbout(latestState || {});
+  $('radarMore').replaceChildren(p);
+}
+function toggleRadarMore(event) {
+  if (event) event.stopPropagation();
+  const open = $('radarMore').hidden;
+  if (open) renderRadarMore();
+  $('radarMore').hidden = !open;
+  $('radar').setAttribute('aria-expanded', String(open));
+}
+$('radar').addEventListener('click', toggleRadarMore);
+$('radar').addEventListener('keydown', event => {
+  if (event.target !== $('radar')) return;
+  if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); toggleRadarMore(event); }
+});
 $('shClose').addEventListener('click', event => { event.stopPropagation(); closeShenron(); });
 document.querySelectorAll('.sh-wish').forEach(button => button.addEventListener('click', event => {
   event.stopPropagation();
@@ -1658,6 +1896,7 @@ function renderState(state) {
   renderVictory(state);
   renderLore(state);
   renderHall(state);
+  renderLoot(state);
   const heroMax = Number(state.hero_max_hp);
   const heroShown = heroMax > 0 && state.hero_hp != null;
   $('heroLine').hidden = !heroShown;
