@@ -333,6 +333,7 @@ body{width:100vw;height:100vh;height:100dvh}
 /* Dragon Balls: seven to find, then Shenron grants one wish */
 .radar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:10px 0 0;padding:8px 12px;border:1px solid rgba(255,159,28,.25);border-radius:12px;background:linear-gradient(120deg,rgba(255,159,28,.1),rgba(255,255,255,.02))}
 .radar[hidden]{display:none}
+.radar{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .balls{display:flex;gap:5px}
 .ball{position:relative;width:20px;height:20px;border-radius:50%;background:rgba(255,255,255,.07);border:1px dashed rgba(255,255,255,.18)}
 .ball.on{border:0;background:radial-gradient(circle at 35% 30%,#fff6c8 0,#ffc23a 22%,#ff8a00 60%,#c24e00 100%);box-shadow:0 0 10px rgba(255,150,20,.55)}
@@ -422,7 +423,8 @@ body{width:100vw;height:100vh;height:100dvh}
 <div class="pad" id="pad">
 <div class="field" id="field" role="button" tabindex="0" aria-expanded="false" aria-controls="fieldMore" hidden><span class="field-ic" id="fieldIc"></span><span class="field-txt"><span class="label">Today's battlefield</span><div class="field-name" id="fieldName"></div><div class="field-fx" id="fieldFx"></div></span><span class="field-chev" aria-hidden="true"></span></div>
 <div class="field-more" id="fieldMore" hidden></div>
-<div class="radar" id="radar" hidden><span class="balls" id="balls"></span><span class="radar-note" id="radarNote"></span><button class="summon" type="button" id="summonBtn" hidden>Summon</button></div>
+<div class="radar" id="radar" role="button" tabindex="0" aria-expanded="false" aria-controls="radarMore" hidden><span class="balls" id="balls"></span><span class="radar-note" id="radarNote"></span><button class="summon" type="button" id="summonBtn" hidden>Summon</button></div>
+<div class="field-more" id="radarMore" hidden></div>
 <div class="wish-chip" id="wishChip" hidden></div>
 <div class="power" id="power" hidden></div>
 <section class="sec" data-sec="morning" hidden><button class="sec-head" type="button" aria-expanded="true"><span class="label">☀️ Morning</span><span class="sec-count"></span><span class="chev" aria-hidden="true"></span></button><div class="tiles" id="morningTiles"></div></section>
@@ -861,9 +863,23 @@ function fieldDetailOf(f, state) {
     case 'crit': return 'Your crit chance goes from <b>' + pct(crit) + '</b> to <b>' + pct(crit + 0.15) + '</b> on every hit. A crit does 1.5× damage.';
     case 'senzu': return 'Healing habits heal Goku <b>twice as much</b>, and you can heal up to <b>100 HP</b> today instead of ' + (Number(state && state.heal_cap) || 50) + '.';
     case 'enraged': return 'Bad habits hurt Goku <b>twice as much</b> today. Good habits hit the boss as usual.';
-    case 'dragon': return 'Dragon Balls drop <b>three times as often</b> when you hit the boss, and a Strava workout is the best chance.';
+    case 'dragon': return dragonBallsAbout(state) + ' Today they drop <b>three times as often</b>, and a Strava workout is the best chance.';
     default: return '';
   }
+}
+// What Dragon Balls are, for the Dragon radar field and the radar itself.
+// Shenron's wishes stay a surprise until all seven are found.
+function ballCountOf(state) {
+  const mask = Math.max(0, Math.min(ALL_BALLS, Number(state && state.dragon_balls) || 0));
+  let count = 0;
+  for (let n = 0; n < 7; n++) if (mask & (1 << n)) count++;
+  return count;
+}
+function dragonBallsAbout(state) {
+  const count = ballCountOf(state);
+  const have = count === 7 ? 'You have <b>all seven</b>: tap Summon.'
+    : count ? 'You have <b>' + count + ' of 7</b>.' : 'You have none yet. Once you find the first, a radar with your balls appears on this tab.';
+  return '<b>Dragon Balls</b> are rare drops. Now and then a hit on the boss leaves one behind. There are seven, and when you hold all seven, <b>Shenron</b> the eternal dragon appears and grants you one wish. ' + have;
 }
 function nextRolloverOf(now) {
   const today = dayKey(now);
@@ -986,6 +1002,8 @@ function renderRadar(state) {
   }
   shownBalls = mask;
   $('radar').hidden = count === 0;
+  if (count === 0) { $('radarMore').hidden = true; $('radar').setAttribute('aria-expanded', 'false'); }
+  else if (!$('radarMore').hidden) renderRadarMore();
   $('radar').setAttribute('aria-label', count + ' of 7 Dragon Balls');
   $('radarNote').textContent = count === 7 ? '' : count + ' / 7';
   $('summonBtn').hidden = count !== 7;
@@ -1013,6 +1031,24 @@ function openShenron() {
 }
 function closeShenron() { $('shenron').hidden = true; }
 $('summonBtn').addEventListener('click', event => { event.stopPropagation(); openShenron(); });
+// Tapping the radar says what Dragon Balls are.
+function renderRadarMore() {
+  const p = document.createElement('p');
+  p.innerHTML = dragonBallsAbout(latestState || {});
+  $('radarMore').replaceChildren(p);
+}
+function toggleRadarMore(event) {
+  if (event) event.stopPropagation();
+  const open = $('radarMore').hidden;
+  if (open) renderRadarMore();
+  $('radarMore').hidden = !open;
+  $('radar').setAttribute('aria-expanded', String(open));
+}
+$('radar').addEventListener('click', toggleRadarMore);
+$('radar').addEventListener('keydown', event => {
+  if (event.target !== $('radar')) return;
+  if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); toggleRadarMore(event); }
+});
 $('shClose').addEventListener('click', event => { event.stopPropagation(); closeShenron(); });
 document.querySelectorAll('.sh-wish').forEach(button => button.addEventListener('click', event => {
   event.stopPropagation();
