@@ -147,6 +147,7 @@ body{width:100vw;height:100vh;height:100dvh}
 .hit-dmg small{display:block;font-size:10px;font-weight:700;letter-spacing:0;color:var(--dim)}
 .row.crit .hit-dmg{color:var(--hot)}
 .row.hurt .hit-dmg{color:#ff8f8f}
+.row.rest .hit-dmg{color:#7dffa0}
 .row.hurt .hit-name::before{content:'';display:inline-block;width:6px;height:6px;margin-right:7px;border-radius:50%;background:#ff8f8f;vertical-align:2px}
 .crit-tag{display:inline-block;margin-left:6px;padding:1px 5px;border-radius:5px;background:rgba(255,95,95,.18);color:var(--hot);font-size:9px;font-weight:850;letter-spacing:.08em;vertical-align:2px}
 .empty{padding:28px 4px;text-align:center;color:var(--dim);font-size:13px}
@@ -817,13 +818,14 @@ function updateTile(tile, habit) {
     if (unit.textContent === 'ago') unit.textContent = '';
     chip.textContent = '🔥' + streak.days;
     chip.classList.toggle('risk', !streak.today);
-    chip.classList.toggle('paying', streak.today && streak.bonus > 0);
+    // A healing habit keeps its streak days but earns no damage bonus.
+    chip.classList.toggle('paying', streak.today && streak.bonus > 0 && !heals);
   }
   const label = habit.name + (hero ? ', ' + (ago === null ? 'no slips yet' : ago + ' clean') : ', ' + (ago === null ? 'not done yet' : ago + ' ago'));
   const dmgLabel = dmg ? (hero ? ', costs you ' : ', hits for ') + dmg.min + ' to ' + dmg.max + (ko === 'sure' ? ', finishes the boss' : ko === 'maybe' ? ', can finish the boss' : '') : '';
   const streakLabel = !streak ? '' : ', ' + streak.days + '-day streak' + (streak.today
-    ? (streak.bonus ? ', +' + streak.bonus + '% damage' : '')
-    : ', hit today to keep it' + (streak.next ? ' for +' + streak.next + '%' : ''));
+    ? (streak.bonus && !heals ? ', +' + streak.bonus + '% damage' : '')
+    : ', hit today to keep it' + (streak.next && !heals ? ' for +' + streak.next + '%' : ''));
   const healLabel = heals ? ', heals you ' + heals.min + ' to ' + heals.max + ' HP' : '';
   const boostLabel = boost ? ', ' + boost.label + ' today' : '';
   tile.setAttribute('aria-label', label + dmgLabel + healLabel + streakLabel + boostLabel + '. Hold to log.');
@@ -841,8 +843,9 @@ function damageOf(habit) {
   const base = max / mult;
   return { min, max, tier: base <= 15 ? 1 : base <= 32 ? 2 : 3 };
 }
-// Healing habits give the hero HP back on top of their damage (Battle rolls
-// heal_min to heal_max, not scaled by level), up to heal_cap HP per game day.
+// Healing habits give the hero HP back instead of hitting the boss (Battle
+// rolls heal_min to heal_max, not scaled by level), up to heal_cap HP per game
+// day. Publish sends them without dmg_min / dmg_max, so they show no tier or KO.
 function healOf(habit) {
   const min = Number(habit.heal_min), max = Number(habit.heal_max);
   return habit.heal_max != null && max > 0 ? { min: isFinite(min) ? min : 0, max } : null;
@@ -972,6 +975,8 @@ $('field').addEventListener('keydown', event => {
 function fieldBoostOf(habit, heals) {
   const f = todayField();
   const group = groupOf(habit);
+  // Healing habits never hit the boss, so only Senzu day touches them.
+  if (heals) return f.key === 'senzu' ? { tag: '💚×2', label: 'Senzu day, heals double' } : null;
   if (f.key === 'gravity' && group === 'workout') return { tag: '×1.5', label: 'Gravity chamber ×1.5' };
   if (f.key === 'dawn' && group === 'morning') return { tag: '×1.5', label: 'Dawn strike ×1.5' };
   if (f.key === 'dusk' && group === 'evening') return { tag: '×1.5', label: 'Night raid ×1.5' };
@@ -1411,12 +1416,14 @@ async function sendAttacks() {
     savePasscode(job.passcode);
     const at = tileOf(job.key);
     if (result.code === 'hit') {
+      // Healing habits only heal: no damage pop and nothing lands on the boss.
       const heal = Number(result.heal) || 0;
-      if (at && (Number(result.damage) > 0 || !heal)) popOn(at, (result.critical ? '⚡ −' : '−') + result.damage, result.critical ? 'crit' : '');
-      if (at && heal) popOn(at, '+' + heal + ' HP', 'heal');
+      const healOnly = Number(result.heal_only) === 1 || (!(Number(result.damage) > 0) && heal > 0);
+      if (at && !healOnly) popOn(at, (result.critical ? '⚡ −' : '−') + result.damage, result.critical ? 'crit' : '');
+      if (at && (heal || healOnly)) popOn(at, heal ? '+' + heal + ' HP' : 'no heal', 'heal');
       const before = hpShare(latestState, 'boss');
       applyLocal(withHit(latestState, result, job.key), [{ kind: 'add', id: String(result.event_id || '').replace(/-/g, '') }]);
-      if (Number(result.damage) > 0 || !heal) landOnPad(result, 'boss', before);
+      if (!healOnly) landOnPad(result, 'boss', before);
       if (Number(result.dragon_ball) > 0) playBallDrop(Number(result.dragon_ball));
     } else if (result.code === 'hero_hit') {
       if (at) popOn(at, '−' + result.damage + ' you', 'hurt');
@@ -1496,7 +1503,10 @@ function withHabitTime(state, key, at, result) {
 }
 function withHit(state, result, key) {
   const next = withHabitTime(state, key, result.occurred_at, result);
-  next.current_hp = Number(result.hp_after);
+  // A healing habit leaves the boss alone; with no boss on the field its event
+  // has no fight, so it stays out of this fight's log.
+  const healOnly = Number(result.heal_only) === 1;
+  if (!healOnly) next.current_hp = Number(result.hp_after);
   if (Number(result.defeated) === 1) {
     next.status = 'Defeated';
     next.defeat_reason = 'Defeated in Combat';
@@ -1517,6 +1527,7 @@ function withHit(state, result, key) {
     next.hero_healed_today = healedToday(state) + heal;
     next.hero_heal_day = dayKey(Date.now());
   }
+  if (healOnly && !(Number(result.hp_max) > 0)) return next;
   if (Number(result.dragon_ball) > 0) entry.dragon_ball = Number(result.dragon_ball);
   if (result.dragon_balls != null && result.dragon_balls !== '') next.dragon_balls = Number(result.dragon_balls) || 0;
   entry.hp_after = Number(result.hp_after);
@@ -1752,8 +1763,13 @@ function dayLabel(key) {
   if (key === dayKey(Date.now() - 86400000)) return 'Yesterday';
   return dayLabelFormat.format(new Date(key + 'T12:00:00Z')).replace(',', '');
 }
+// A healing habit logs a 0-damage boss event: it is about Goku, so it sits
+// under "Me" and is never one of the hits on the boss.
+function isRest(hit) {
+  return hit.kind !== 'hero' && Number(hit.wish) !== 1 && !(Number(hit.damage) > 0);
+}
 function kindOf(hit) {
-  return hit.kind === 'hero' ? 'hero' : 'boss';
+  return hit.kind === 'hero' || isRest(hit) ? 'hero' : 'boss';
 }
 
 function renderLog(state) {
@@ -1816,11 +1832,12 @@ function buildDayHeader(day) {
   return header;
 }
 function appendHitRow(hit) {
-  const hero = kindOf(hit) === 'hero';
-  const crit = !hero && Number(hit.crit) === 1;
+  const rest = isRest(hit);
+  const hero = kindOf(hit) === 'hero' && !rest;
+  const crit = !hero && !rest && Number(hit.crit) === 1;
   const wish = Number(hit.wish) === 1;
   const row = document.createElement('li');
-  row.className = 'row' + (crit ? ' crit' : '') + (hero ? ' hurt' : '') + (wish ? ' wish' : '');
+  row.className = 'row' + (crit ? ' crit' : '') + (hero ? ' hurt' : '') + (wish ? ' wish' : '') + (rest ? ' rest' : '');
   const card = document.createElement('div');
   card.className = 'hit';
   const name = document.createElement('div');
@@ -1840,13 +1857,17 @@ function appendHitRow(hit) {
   if (hit.effort) boosts.push('×' + hit.effort + ' effort');
   if (hit.form_bonus) boosts.push('+' + Math.round((hit.form_bonus - 1) * 100) + '% form');
   if (hit.streak) boosts.push('🔥' + hit.streak + '-day +' + streakBonus(hit.streak) + '%');
-  if (hit.heal) boosts.push('💚 +' + hit.heal + ' HP');
+  if (hit.heal && !rest) boosts.push('💚 +' + hit.heal + ' HP');
   if (hit.dragon_ball) boosts.push('🟠 ' + hit.dragon_ball + '-star ball');
   when.textContent = formatWhen(hit.at) + (boosts.length ? ' · ' + boosts.join(' · ') : '');
   const dmg = document.createElement('div');
   dmg.className = 'hit-dmg';
-  dmg.textContent = wish && !Number(hit.damage) ? '🐉' : '−' + (Number(hit.damage) || 0);
-  if (hit.hp_after != null) {
+  dmg.textContent = rest ? (Number(hit.heal) > 0 ? '+' + hit.heal : '💚') : wish && !Number(hit.damage) ? '🐉' : '−' + (Number(hit.damage) || 0);
+  if (rest) {
+    const left = document.createElement('small');
+    left.textContent = Number(hit.heal) > 0 ? 'HP back' : 'no heal';
+    dmg.append(left);
+  } else if (hit.hp_after != null) {
     const left = document.createElement('small');
     left.textContent = (hero ? 'you · ' : '') + Number(hit.hp_after).toLocaleString() + ' HP left';
     dmg.append(left);
