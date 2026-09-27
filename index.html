@@ -295,6 +295,62 @@ body{width:100vw;height:100vh;height:100dvh}
 .pop.big{top:38%;z-index:7;font-size:34px}
 @media(prefers-reduced-motion:reduce){.front.shake,.front.stage-3 .fx-vignette,.front.stage-3 .fx-flicker,.front.stage-3 .stage-tag,.front.stage-3 .hud-bottom .hp-fill{animation:none}.hp-trail{transition:none}}
 @media(prefers-reduced-motion:reduce){.sc-head.jolt,.back .hp-track.jolt,.hero-line.jolt,.back-flash{animation:none}.back-flash{opacity:0}.tile.strike,.tile.strike .charge{animation:none}.tile.is-sending::after{animation-duration:3s}.card{transition:none}.hero-video{transition:none}.hp-fill{transition:none}.hit,.row{transition:none}.pop{animation-duration:1ms}}
+
+/* Battlefield: one condition per game day (Battle module 7 rolls the same one) */
+.field{display:flex;align-items:center;gap:10px;margin:10px 0 0;padding:9px 12px;border:1px solid rgba(255,211,90,.22);border-radius:12px;background:linear-gradient(120deg,rgba(255,211,90,.09),rgba(255,255,255,.02))}
+.field[hidden]{display:none}
+.field-ic{flex:none;font-size:22px;line-height:1}
+.field-txt{min-width:0}
+.field-name{font-size:13px;font-weight:850;letter-spacing:-.01em}
+.field-fx{margin-top:1px;font-size:11px;font-weight:700;color:var(--muted);line-height:1.3}
+.field.calm{border-color:var(--line);background:rgba(255,255,255,.03)}
+.field.enraged{border-color:rgba(255,95,95,.35);background:linear-gradient(120deg,rgba(255,95,95,.12),rgba(255,255,255,.02))}
+.fieldtag{flex:none;padding:1px 5px;border-radius:5px;font-size:9px;font-weight:900;letter-spacing:.04em;color:#1a1200;background:#ffd35a}
+.tile.hero .fieldtag{background:#ff6b6b;color:#1a0000}
+.fieldtag[hidden]{display:none}
+.field-reveal{position:absolute;left:14px;right:14px;top:34%;z-index:9;padding:18px 16px 16px;border-radius:18px;text-align:center;background:rgba(8,10,16,.88);border:1px solid rgba(255,211,90,.35);box-shadow:0 18px 50px rgba(0,0,0,.6);animation:revealIn 700ms cubic-bezier(.2,.9,.3,1.2) both;cursor:pointer}
+.field-reveal[hidden]{display:none}
+.field-reveal.out{animation:revealOut 500ms ease-in forwards}
+.fr-kicker{font-size:9px;font-weight:850;letter-spacing:.3em;text-transform:uppercase;color:#ffd35a}
+.fr-ic{margin-top:8px;font-size:44px;line-height:1}
+.fr-name{margin-top:6px;font-size:22px;font-weight:900;letter-spacing:-.01em}
+.fr-fx{margin-top:4px;font-size:13px;font-weight:700;color:var(--muted)}
+@keyframes revealIn{from{opacity:0;transform:scale(.7) rotate(-3deg)}to{opacity:1;transform:none}}
+@keyframes revealOut{to{opacity:0;transform:translateY(-12px) scale(.96)}}
+/* Dragon Balls: seven to find, then Shenron grants one wish */
+.radar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:10px 0 0;padding:8px 12px;border:1px solid rgba(255,159,28,.25);border-radius:12px;background:linear-gradient(120deg,rgba(255,159,28,.1),rgba(255,255,255,.02))}
+.radar[hidden]{display:none}
+.balls{display:flex;gap:5px}
+.ball{position:relative;width:20px;height:20px;border-radius:50%;background:rgba(255,255,255,.07);border:1px dashed rgba(255,255,255,.18)}
+.ball.on{border:0;background:radial-gradient(circle at 35% 30%,#fff6c8 0,#ffc23a 22%,#ff8a00 60%,#c24e00 100%);box-shadow:0 0 10px rgba(255,150,20,.55)}
+.ball i{position:absolute;inset:0;display:flex;flex-wrap:wrap;align-content:center;justify-content:center;font-style:normal;font-size:6px;line-height:5px;color:#d0140b;padding:4px}
+.ball.new{animation:ballIn 900ms cubic-bezier(.2,.9,.3,1.4)}
+@keyframes ballIn{0%{transform:scale(0) rotate(-180deg)}70%{transform:scale(1.5)}100%{transform:none}}
+.radar-note{font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);white-space:nowrap}
+.summon{padding:6px 10px;border:0;border-radius:10px;background:linear-gradient(90deg,#7dffb0,#3ad17a);color:#02140a;font:inherit;font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;box-shadow:0 0 18px rgba(80,255,150,.45);animation:vpulse 2.2s ease-in-out infinite}
+.summon[hidden]{display:none}
+.wish-chip{margin:8px 0 0;padding:7px 12px;border-radius:12px;font-size:12px;font-weight:800;color:#b9ffd2;background:rgba(80,255,150,.1);border:1px solid rgba(80,255,150,.3)}
+.wish-chip[hidden]{display:none}
+.ball-drop{position:absolute;left:50%;top:44%;z-index:9;width:92px;height:92px;margin:-46px 0 0 -46px;border-radius:50%;pointer-events:none;background:radial-gradient(circle at 35% 30%,#fff6c8 0,#ffc23a 22%,#ff8a00 60%,#c24e00 100%);box-shadow:0 0 60px rgba(255,150,20,.8);animation:ballDrop 2200ms cubic-bezier(.2,.9,.3,1) forwards}
+.ball-drop i{position:absolute;inset:0;display:flex;flex-wrap:wrap;align-content:center;justify-content:center;padding:22px;font-style:normal;font-size:16px;line-height:15px;color:#d0140b}
+@keyframes ballDrop{0%{opacity:0;transform:translateY(-160px) scale(.3) rotate(-240deg)}35%{opacity:1;transform:translateY(0) scale(1.1) rotate(0)}45%{transform:scale(.95)}75%{opacity:1;transform:scale(1)}100%{opacity:0;transform:translateY(-120px) scale(.2)}}
+/* Shenron: the wish screen */
+.shenron{position:absolute;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;padding:22px 16px;background:radial-gradient(90% 60% at 50% 30%,rgba(60,255,140,.3),transparent 70%),rgba(2,8,5,.96);animation:victoryIn 700ms ease-out forwards;cursor:default}
+.shenron[hidden]{display:none}
+.sh-panel{width:100%;max-width:340px;text-align:center}
+.sh-dragon{font-size:64px;line-height:1;filter:drop-shadow(0 0 22px rgba(80,255,150,.8));animation:orb 3s ease-in-out infinite}
+.sh-title{margin-top:10px;font-size:22px;font-weight:900;letter-spacing:.02em;color:#b9ffd2}
+.sh-sub{margin-top:4px;font-size:13px;font-weight:700;color:var(--muted)}
+.sh-wishes{display:grid;gap:8px;margin-top:18px}
+.sh-wish{display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;border:1px solid rgba(80,255,150,.3);border-radius:14px;background:rgba(0,0,0,.4);color:#fff;font:inherit;text-align:left;cursor:pointer}
+.sh-wish:disabled{opacity:.4;cursor:default}
+.sh-wish b{display:block;font-size:14px;font-weight:850}
+.sh-wish small{display:block;margin-top:2px;font-size:11px;font-weight:650;color:var(--muted)}
+.sh-wish span.ic{font-size:24px}
+.sh-close{margin-top:14px;padding:8px 14px;border:0;background:none;color:var(--dim);font:inherit;font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;cursor:pointer}
+.row.wish .hit{background:linear-gradient(100deg,rgba(80,255,150,.1),rgba(255,255,255,.03) 60%)}
+.row.wish .hit-dmg{color:#7dffb0}
+@media(prefers-reduced-motion:reduce){.field-reveal,.field-reveal.out,.ball.new,.ball-drop,.shenron,.sh-dragon,.summon{animation:none}.ball-drop{display:none}}
 </style>
 </head>
 <body>
@@ -328,6 +384,7 @@ body{width:100vw;height:100vh;height:100dvh}
 <div class="v-note" id="vNote"></div>
 </div>
 </div>
+<div class="field-reveal" id="fieldReveal" hidden><div class="fr-kicker">Today's battlefield</div><div class="fr-ic" id="frIc"></div><div class="fr-name" id="frName"></div><div class="fr-fx" id="frFx"></div></div>
 <div class="hud-top">
 <div class="metric"><div class="label">Boss</div><div class="value boss-name" id="bossName">—</div><div class="epithet" id="bossEpithet"></div></div>
 <div class="metric right"><div class="label">Level</div><div class="value level-num" id="level">—</div><div class="power-mult" id="powerMult"></div></div>
@@ -350,6 +407,9 @@ body{width:100vw;height:100vh;height:100dvh}
 </div>
 <div class="panel" id="panelAttack" role="tabpanel" aria-labelledby="tabAttack">
 <div class="pad" id="pad">
+<div class="field" id="field" hidden><span class="field-ic" id="fieldIc"></span><span class="field-txt"><span class="label">Today's battlefield</span><div class="field-name" id="fieldName"></div><div class="field-fx" id="fieldFx"></div></span></div>
+<div class="radar" id="radar" hidden><span class="balls" id="balls"></span><span class="radar-note" id="radarNote"></span><button class="summon" type="button" id="summonBtn" hidden>Summon</button></div>
+<div class="wish-chip" id="wishChip" hidden></div>
 <div class="power" id="power" hidden></div>
 <section class="sec" data-sec="morning" hidden><button class="sec-head" type="button" aria-expanded="true"><span class="label">☀️ Morning</span><span class="sec-count"></span><span class="chev" aria-hidden="true"></span></button><div class="tiles" id="morningTiles"></div></section>
 <section class="sec" data-sec="day" hidden><button class="sec-head" type="button" aria-expanded="true"><span class="label">🍽️ Day</span><span class="sec-count"></span><span class="chev" aria-hidden="true"></span></button><div class="tiles" id="dayTiles"></div></section>
@@ -393,6 +453,19 @@ body{width:100vw;height:100vh;height:100dvh}
 <ul class="hall-list" id="hallList"></ul>
 </div>
 <div class="hint">Every boss you beat hangs here</div>
+</div>
+<div class="shenron" id="shenron" hidden role="dialog" aria-modal="true" aria-labelledby="shTitle">
+<div class="sh-panel">
+<div class="sh-dragon" aria-hidden="true">🐉</div>
+<div class="sh-title" id="shTitle">Shenron has been summoned</div>
+<div class="sh-sub">State your wish. Only one will be granted.</div>
+<div class="sh-wishes">
+<button class="sh-wish" type="button" data-wish="heal"><span class="ic">💚</span><span><b>Full heal</b><small>Goku back to full HP.</small></span></button>
+<button class="sh-wish" type="button" data-wish="power"><span class="ic">⚡</span><span><b>Double power</b><small>Every hit on the boss ×2 until 04:00.</small></span></button>
+<button class="sh-wish" type="button" data-wish="strike"><span class="ic">☄️</span><span><b>Shenron's strike</b><small>A blow for 30% of the boss's max HP. Never the final one.</small></span></button>
+</div>
+<button class="sh-close" type="button" id="shClose">Not yet</button>
+</div>
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 </section>
@@ -474,7 +547,7 @@ document.addEventListener('visibilitychange', () => {
 cardEl.addEventListener('click', event => {
   // A swipe or hold ends in a click on some browsers; an open row closes on the next tap.
   if (suppressClick) { suppressClick = false; return; }
-  if (event.target.closest('.row-action, .tile, .tabs, .filters, .v-btn')) return;
+  if (event.target.closest('.row-action, .tile, .tabs, .filters, .v-btn, .radar, .shenron, .field-reveal')) return;
   if (openRow) { closeOpenRow(); return; }
   if (busy) return;
   const flipped = cardEl.classList.contains('is-flipped');
@@ -641,7 +714,7 @@ function buildTile(habit) {
   tile.type = 'button';
   tile.className = 'tile' + (habit.effect === 'Hero HP' ? ' hero' : '') + (groupOf(habit) === 'workout' ? ' workout' : '');
   tile.dataset.key = habit.key;
-  tile.innerHTML = '<span class="tile-ic"></span><span class="tile-body"><span class="tile-top"><span class="tile-name"></span><span class="heals" hidden>💚</span><span class="ko" hidden>KO</span><span class="tile-queued">QUEUED</span></span>'
+  tile.innerHTML = '<span class="tile-ic"></span><span class="tile-body"><span class="tile-top"><span class="tile-name"></span><span class="heals" hidden>💚</span><span class="fieldtag" hidden></span><span class="ko" hidden>KO</span><span class="tile-queued">QUEUED</span></span>'
     + '<span class="tile-sub"><span class="tile-since"><b></b> <span></span></span><span class="streak" hidden></span><span class="meter" hidden><i></i><i></i><i></i></span></span>'
     + '<span class="tile-last" hidden></span></span><span class="charge"></span>';
   attachHold(tile);
@@ -680,6 +753,9 @@ function updateTile(tile, habit) {
   tile.querySelector('.ko').textContent = ko === 'maybe' ? 'KO?' : 'KO';
   const heals = healOf(habit);
   tile.querySelector('.heals').hidden = !heals;
+  const boost = fieldBoostOf(habit, heals);
+  tile.querySelector('.fieldtag').hidden = !boost;
+  tile.querySelector('.fieldtag').textContent = boost ? boost.tag : '';
   const streak = streakOf(habit);
   const chip = tile.querySelector('.streak');
   chip.hidden = !streak;
@@ -696,7 +772,8 @@ function updateTile(tile, habit) {
     ? (streak.bonus ? ', +' + streak.bonus + '% damage' : '')
     : ', hit today to keep it' + (streak.next ? ' for +' + streak.next + '%' : ''));
   const healLabel = heals ? ', heals you ' + heals.min + ' to ' + heals.max + ' HP' : '';
-  tile.setAttribute('aria-label', label + dmgLabel + healLabel + streakLabel + '. Hold to log.');
+  const boostLabel = boost ? ', ' + boost.label + ' today' : '';
+  tile.setAttribute('aria-label', label + dmgLabel + healLabel + streakLabel + boostLabel + '. Hold to log.');
 }
 setInterval(() => { if (cardEl.classList.contains('is-flipped')) renderTiles(); }, 30000);
 
@@ -719,6 +796,182 @@ function healOf(habit) {
 }
 function healedToday(state) {
   return state && state.hero_heal_day === dayKey(Date.now()) ? Number(state.hero_healed_today) || 0 : 0;
+}
+// ---- Battlefield ----
+// One condition per game day, picked from a hash of the day, so Battle
+// (module 7, BATTLEFIELDS) and this page agree without storing anything.
+// Change both together.
+const BATTLEFIELDS = [
+  { key: 'calm', w: 5, icon: '🌤️', name: 'Calm skies', fx: 'No tricks today. Just you and the boss.' },
+  { key: 'gravity', w: 2, icon: '🪨', name: 'Gravity chamber', fx: 'Workouts hit ×1.5.' },
+  { key: 'dawn', w: 2, icon: '🌅', name: 'Dawn strike', fx: 'Morning habits hit ×1.5.' },
+  { key: 'dusk', w: 2, icon: '🌙', name: 'Night raid', fx: 'Evening habits hit ×1.5.' },
+  { key: 'zenkai', w: 2, icon: '💥', name: 'Zenkai boost', fx: 'Every hit on the boss +20%.' },
+  { key: 'crit', w: 2, icon: '⚡', name: 'Crit storm', fx: 'Crit chance +15%.' },
+  { key: 'senzu', w: 2, icon: '🫘', name: 'Senzu day', fx: 'Heals ×2, up to 100 HP today.' },
+  { key: 'enraged', w: 2, icon: '😡', name: 'Enraged boss', fx: 'Bad habits hurt ×2. Stay clean.' },
+  { key: 'dragon', w: 1, icon: '🐉', name: 'Dragon radar', fx: 'Dragon Balls turn up three times as often.' }
+];
+function battlefieldOf(day) {
+  const s = 'bf|' + day;
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+  h ^= h >>> 16; h = Math.imul(h, 2246822507); h ^= h >>> 13; h = Math.imul(h, 3266489909); h ^= h >>> 16;
+  const total = BATTLEFIELDS.reduce((sum, b) => sum + b.w, 0);
+  let r = (h >>> 0) % total;
+  for (const b of BATTLEFIELDS) { if (r < b.w) return b; r -= b.w; }
+  return BATTLEFIELDS[0];
+}
+const todayField = () => battlefieldOf(dayKey(Date.now()));
+function renderField() {
+  const f = todayField();
+  $('field').hidden = false;
+  $('field').className = 'field ' + f.key;
+  $('fieldIc').textContent = f.icon;
+  $('fieldName').textContent = f.name;
+  $('fieldFx').textContent = f.fx;
+}
+// The tiles the day's battlefield boosts carry a small tag.
+function fieldBoostOf(habit, heals) {
+  const f = todayField();
+  const group = groupOf(habit);
+  if (f.key === 'gravity' && group === 'workout') return { tag: '×1.5', label: 'Gravity chamber ×1.5' };
+  if (f.key === 'dawn' && group === 'morning') return { tag: '×1.5', label: 'Dawn strike ×1.5' };
+  if (f.key === 'dusk' && group === 'evening') return { tag: '×1.5', label: 'Night raid ×1.5' };
+  if (f.key === 'enraged' && group === 'bad') return { tag: '×2', label: 'Enraged boss, costs double' };
+  if (f.key === 'senzu' && heals) return { tag: '💚×2', label: 'Senzu day, heals double' };
+  return null;
+}
+function healCapOf(state) {
+  return todayField().key === 'senzu' ? 100 : (Number(state && state.heal_cap) || 50);
+}
+// The first time the card opens on a game day, the front announces the battlefield.
+const FIELD_SEEN_KEY = 'boss-field-seen';
+function revealField() {
+  const day = dayKey(Date.now());
+  let seen = '';
+  try { seen = localStorage.getItem(FIELD_SEEN_KEY) || ''; } catch (_) {}
+  if (seen === day || cardEl.classList.contains('is-flipped')) return;
+  try { localStorage.setItem(FIELD_SEEN_KEY, day); } catch (_) {}
+  const f = todayField();
+  $('frIc').textContent = f.icon;
+  $('frName').textContent = f.name;
+  $('frFx').textContent = f.fx;
+  const el = $('fieldReveal');
+  el.classList.remove('out');
+  el.hidden = false;
+  const hide = () => { el.classList.add('out'); setTimeout(() => { el.hidden = true; }, 500); };
+  el.onclick = event => { event.stopPropagation(); hide(); };
+  setTimeout(hide, 5200);
+}
+
+// ---- Dragon Balls ----
+// Battle can drop one of the seven on a live hit (Hero State keeps them as a
+// bitmask, ball n = bit n-1). The radar stays hidden until the first one turns
+// up. With all seven, Shenron grants one wish.
+const ALL_BALLS = 127;
+let shownBalls = null;
+// The red stars on a ball, one element each so they wrap into a cluster.
+function starsOf(n) {
+  const i = document.createElement('i');
+  for (let k = 0; k < n; k++) { const star = document.createElement('span'); star.textContent = '★'; i.append(star); }
+  return i;
+}
+function ballEl(n, on) {
+  const b = document.createElement('span');
+  b.className = 'ball' + (on ? ' on' : '');
+  if (on) b.append(starsOf(n));
+  return b;
+}
+function wishToday(state) {
+  const w = state && state.wish;
+  return w && w.kind === 'power' && w.day === dayKey(Date.now()) ? w : null;
+}
+function renderRadar(state) {
+  const mask = Math.max(0, Math.min(ALL_BALLS, Number(state.dragon_balls) || 0));
+  let count = 0;
+  const balls = $('balls');
+  balls.replaceChildren();
+  for (let n = 1; n <= 7; n++) {
+    const on = !!(mask & (1 << (n - 1)));
+    if (on) count++;
+    const b = ballEl(n, on);
+    if (on && shownBalls !== null && !(shownBalls & (1 << (n - 1)))) b.classList.add('new');
+    b.title = on ? n + '-star ball' : 'Not found yet';
+    balls.append(b);
+  }
+  shownBalls = mask;
+  $('radar').hidden = count === 0;
+  $('radar').setAttribute('aria-label', count + ' of 7 Dragon Balls');
+  $('radarNote').textContent = count === 7 ? '' : count + ' / 7';
+  $('summonBtn').hidden = count !== 7;
+  const wish = wishToday(state);
+  $('wishChip').hidden = !wish;
+  $('wishChip').textContent = wish ? '🐉 Shenron\'s gift: every hit ×2 until 04:00' : '';
+}
+function playBallDrop(n) {
+  if (reduceMotion()) return;
+  const drop = document.createElement('div');
+  drop.className = 'ball-drop';
+  drop.append(starsOf(n));
+  backEl.append(drop);
+  if (navigator.vibrate) navigator.vibrate([20, 60, 20, 60, 80]);
+  setTimeout(() => drop.remove(), 2300);
+}
+function openShenron() {
+  const s = latestState || {};
+  const heroFull = !(Number(s.hero_max_hp) > 0) || Number(s.hero_hp) >= Number(s.hero_max_hp);
+  document.querySelector('.sh-wish[data-wish="heal"]').disabled = heroFull;
+  document.querySelector('.sh-wish[data-wish="power"]').disabled = !!wishToday(s);
+  document.querySelector('.sh-wish[data-wish="strike"]').disabled = s.status !== 'Active' || !(Number(s.current_hp) > 1);
+  $('shenron').hidden = false;
+  if (navigator.vibrate) navigator.vibrate([40, 80, 120]);
+}
+function closeShenron() { $('shenron').hidden = true; }
+$('summonBtn').addEventListener('click', event => { event.stopPropagation(); openShenron(); });
+$('shClose').addEventListener('click', event => { event.stopPropagation(); closeShenron(); });
+document.querySelectorAll('.sh-wish').forEach(button => button.addEventListener('click', event => {
+  event.stopPropagation();
+  makeWish(button.dataset.wish);
+}));
+async function makeWish(kind) {
+  if (busy || attackQueue.length) { showToast('Hang on, a hit is still on its way.'); return; }
+  const passcode = askPasscode();
+  if (!passcode) return;
+  busy = true;
+  document.querySelectorAll('.sh-wish').forEach(b => { b.disabled = true; });
+  try {
+    const data = await post(ATTACK_URL, { key: 'wish-' + kind, request_id: crypto.randomUUID(), occurred_at: new Date().toISOString(), passcode });
+    const result = data.result ? Object.assign({}, data.result, { event_id: data.event_id }) : data;
+    if (result.code === 'bad_passcode') savePasscode('');
+    if (!result.ok) throw new Error(result.text || result.message || 'Shenron did not answer');
+    savePasscode(passcode);
+    closeShenron();
+    const before = hpShare(latestState, 'boss');
+    applyLocal(withWish(latestState, result, kind), [{ kind: 'add', id: String(result.event_id || '').replace(/-/g, '') }]);
+    if (kind === 'strike') landOnPad(result, 'boss', before);
+    showToast(result.text || result.message);
+  } catch (error) {
+    openShenron();
+    showToast(failMessage(error), true);
+  } finally {
+    busy = false;
+    sendAttacks();
+  }
+}
+function withWish(state, result, kind) {
+  const next = Object.assign({}, state, { dragon_balls: 0 });
+  const id = String(result.event_id || '').replace(/-/g, '');
+  const entry = { id, kind: 'boss', at: result.occurred_at, habit: result.habit, damage: Number(result.damage) || 0, crit: 0, wish: 1 };
+  if (kind === 'heal') {
+    entry.heal = Number(result.heal) || 0;
+    next.hero_hp = Number(result.hero_max_hp) || Number(state.hero_max_hp) || 0;
+  }
+  if (kind === 'power') next.wish = { kind: 'power', day: dayKey(Date.now()) };
+  if (kind === 'strike') next.current_hp = Number(result.hp_after);
+  entry.hp_after = Number(kind === 'strike' ? result.hp_after : state.current_hp);
+  next.log = [entry].concat((state.log || []).filter(hit => hit.id !== id));
+  return next;
 }
 // Streak: consecutive game days with a hit of this habit (Battle keeps count).
 // It is alive while the last one was today or yesterday; the bonus tiers match
@@ -926,6 +1179,7 @@ async function sendAttacks() {
       const before = hpShare(latestState, 'boss');
       applyLocal(withHit(latestState, result, job.key), [{ kind: 'add', id: String(result.event_id || '').replace(/-/g, '') }]);
       if (Number(result.damage) > 0 || !heal) landOnPad(result, 'boss', before);
+      if (Number(result.dragon_ball) > 0) playBallDrop(Number(result.dragon_ball));
     } else if (result.code === 'hero_hit') {
       if (at) popOn(at, '−' + result.damage + ' you', 'hurt');
       applyLocal(withHeroHit(latestState, result, job.key, job.occurredAt), [{ kind: 'add', id: String(result.event_id || '').replace(/-/g, '') }]);
@@ -1025,6 +1279,8 @@ function withHit(state, result, key) {
     next.hero_healed_today = healedToday(state) + heal;
     next.hero_heal_day = dayKey(Date.now());
   }
+  if (Number(result.dragon_ball) > 0) entry.dragon_ball = Number(result.dragon_ball);
+  if (result.dragon_balls != null && result.dragon_balls !== '') next.dragon_balls = Number(result.dragon_balls) || 0;
   entry.hp_after = Number(result.hp_after);
   log.unshift(entry);
   next.log = log;
@@ -1196,6 +1452,7 @@ function withoutHit(state, id, result) {
       if (gone && state.hero_heal_day === dayKey(Date.parse(gone.at))) next.hero_healed_today = Math.max(0, (Number(state.hero_healed_today) || 0) - heal);
     }
   }
+  if (result.dragon_balls != null) next.dragon_balls = Number(result.dragon_balls) || 0;
   const log = (state.log || []).filter(hit => hit.id !== id).map(hit => Object.assign({}, hit));
   let hp = Number(next.max_hp) || 0;
   for (let i = log.length - 1; i >= 0; i--) {
@@ -1264,9 +1521,11 @@ function kindOf(hit) {
 function renderLog(state) {
   const all = Array.isArray(state.log) ? state.log : [];
   // The four totals describe the fight, so they only count hits on the boss.
-  const bossHits = all.filter(hit => kindOf(hit) === 'boss');
+  // Shenron's strike counts towards the damage, not as one of your hits.
+  const bossHits = all.filter(hit => kindOf(hit) === 'boss' && Number(hit.wish) !== 1);
   const damages = bossHits.map(hit => Number(hit.damage) || 0);
-  $('stDamage').textContent = damages.reduce((a, b) => a + b, 0).toLocaleString();
+  const wished = all.filter(hit => Number(hit.wish) === 1).reduce((a, hit) => a + (Number(hit.damage) || 0), 0);
+  $('stDamage').textContent = (damages.reduce((a, b) => a + b, 0) + wished).toLocaleString();
   $('stHits').textContent = bossHits.length.toLocaleString();
   $('stCrits').textContent = bossHits.filter(hit => Number(hit.crit) === 1).length.toLocaleString();
   $('stBest').textContent = (damages.length ? Math.max(...damages) : 0).toLocaleString();
@@ -1321,8 +1580,9 @@ function buildDayHeader(day) {
 function appendHitRow(hit) {
   const hero = kindOf(hit) === 'hero';
   const crit = !hero && Number(hit.crit) === 1;
+  const wish = Number(hit.wish) === 1;
   const row = document.createElement('li');
-  row.className = 'row' + (crit ? ' crit' : '') + (hero ? ' hurt' : '');
+  row.className = 'row' + (crit ? ' crit' : '') + (hero ? ' hurt' : '') + (wish ? ' wish' : '');
   const card = document.createElement('div');
   card.className = 'hit';
   const name = document.createElement('div');
@@ -1343,18 +1603,20 @@ function appendHitRow(hit) {
   if (hit.form_bonus) boosts.push('+' + Math.round((hit.form_bonus - 1) * 100) + '% form');
   if (hit.streak) boosts.push('🔥' + hit.streak + '-day +' + streakBonus(hit.streak) + '%');
   if (hit.heal) boosts.push('💚 +' + hit.heal + ' HP');
+  if (hit.dragon_ball) boosts.push('🟠 ' + hit.dragon_ball + '-star ball');
   when.textContent = formatWhen(hit.at) + (boosts.length ? ' · ' + boosts.join(' · ') : '');
   const dmg = document.createElement('div');
   dmg.className = 'hit-dmg';
-  dmg.textContent = '−' + (Number(hit.damage) || 0);
+  dmg.textContent = wish && !Number(hit.damage) ? '🐉' : '−' + (Number(hit.damage) || 0);
   if (hit.hp_after != null) {
     const left = document.createElement('small');
     left.textContent = (hero ? 'you · ' : '') + Number(hit.hp_after).toLocaleString() + ' HP left';
     dmg.append(left);
   }
   card.append(name, dmg, when);
-  // Entries published before revert support have no event id to send.
-  if (hit.id) {
+  // Entries published before revert support have no event id to send, and
+  // Shenron's wishes cannot be taken back.
+  if (hit.id && !wish) {
     row.dataset.id = hit.id;
     const action = document.createElement('button');
     action.type = 'button';
@@ -1390,6 +1652,8 @@ function renderState(state) {
     $('scHp').textContent = '';
   }
   renderDamage(state);
+  renderField();
+  renderRadar(state);
   renderPower(state);
   renderVictory(state);
   renderLore(state);
@@ -1403,7 +1667,7 @@ function renderState(state) {
     $('heroName').textContent = state.hero_name || 'Hero';
     const healed = healedToday(state);
     $('heroHp').textContent = Math.round(heroHp).toLocaleString() + ' / ' + Math.round(heroMax).toLocaleString() + ' HP'
-      + (healed > 0 ? ' · 💚 ' + healed + '/' + (Number(state.heal_cap) || 50) + ' today' : '');
+      + (healed > 0 ? ' · 💚 ' + healed + '/' + healCapOf(state) + ' today' : '');
     $('heroFill').style.width = Math.max(0, Math.min(100, (heroHp / heroMax) * 100)) + '%';
   }
   renderLog(state);
@@ -1488,6 +1752,7 @@ async function refreshDashboard() {
     latestState = state;
     // Re-rendering mid-swipe or mid-hold would pull the row or tile out from under the finger.
     if (!busy && !attackQueue.length && !openRow && !document.querySelector('.is-swiping, .is-charging')) renderState(state);
+    revealField();
     const videoUrl = state.video_url || '';
     const videoKey = String(state.video_public_id || state.video_version || videoUrl);
     if (videoUrl && videoKey !== loadedVideoKey) {
@@ -1521,8 +1786,10 @@ function renderVictory(state) {
     : summoning ? 'Summoning the next boss. This takes a few minutes.' : (state.boss_name || 'The boss') + ' has fallen';
   $('vBtn').dataset.label = stuck ? 'Try summoning again' : 'Claim victory';
   if (!claimBusy) $('vBtn').textContent = $('vBtn').dataset.label;
-  const hits = (Array.isArray(state.log) ? state.log : []).filter(hit => kindOf(hit) === 'boss');
-  $('vDamage').textContent = hits.reduce((a, hit) => a + (Number(hit.damage) || 0), 0).toLocaleString();
+  const bossLog = (Array.isArray(state.log) ? state.log : []).filter(hit => kindOf(hit) === 'boss');
+  // Shenron's strike adds to the damage but is not one of your hits (Claim Victory skips it too).
+  const hits = bossLog.filter(hit => Number(hit.wish) !== 1);
+  $('vDamage').textContent = bossLog.reduce((a, hit) => a + (Number(hit.damage) || 0), 0).toLocaleString();
   $('vHits').textContent = hits.length.toLocaleString();
   $('vCrits').textContent = hits.filter(hit => Number(hit.crit) === 1).length.toLocaleString();
   const start = Date.parse(state.started_at || (hits.length ? hits[hits.length - 1].at : ''));
