@@ -303,6 +303,19 @@ body{width:100vw;height:100vh;height:100dvh}
 .field-txt{min-width:0}
 .field-name{font-size:13px;font-weight:850;letter-spacing:-.01em}
 .field-fx{margin-top:1px;font-size:11px;font-weight:700;color:var(--muted);line-height:1.3}
+.field{cursor:pointer;-webkit-tap-highlight-color:transparent}
+.field-txt{flex:1}
+.field-chev{flex:none;width:8px;height:8px;margin-right:2px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);transition:transform .2s ease}
+.field.open .field-chev{transform:rotate(-135deg)}
+.field-more{margin:6px 0 0;padding:10px 12px;border:1px solid rgba(255,211,90,.18);border-radius:12px;background:rgba(255,255,255,.03);font-size:12px;line-height:1.45;color:var(--muted)}
+.field-more[hidden]{display:none}
+.field-more p{margin:0}
+.field-more p+p{margin-top:6px}
+.field-more b{color:#fff;font-weight:800}
+.field-more .fm-hits{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.field-more .fm-hits span{padding:2px 7px;border-radius:8px;background:rgba(255,255,255,.06);font-size:11px;font-weight:700;color:#fff}
+.field-more .fm-when{margin-top:8px;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+@media(prefers-reduced-motion:reduce){.field-chev{transition:none}}
 .field.calm{border-color:var(--line);background:rgba(255,255,255,.03)}
 .field.enraged{border-color:rgba(255,95,95,.35);background:linear-gradient(120deg,rgba(255,95,95,.12),rgba(255,255,255,.02))}
 .fieldtag{flex:none;padding:1px 5px;border-radius:5px;font-size:9px;font-weight:900;letter-spacing:.04em;color:#1a1200;background:#ffd35a}
@@ -407,7 +420,8 @@ body{width:100vw;height:100vh;height:100dvh}
 </div>
 <div class="panel" id="panelAttack" role="tabpanel" aria-labelledby="tabAttack">
 <div class="pad" id="pad">
-<div class="field" id="field" hidden><span class="field-ic" id="fieldIc"></span><span class="field-txt"><span class="label">Today's battlefield</span><div class="field-name" id="fieldName"></div><div class="field-fx" id="fieldFx"></div></span></div>
+<div class="field" id="field" role="button" tabindex="0" aria-expanded="false" aria-controls="fieldMore" hidden><span class="field-ic" id="fieldIc"></span><span class="field-txt"><span class="label">Today's battlefield</span><div class="field-name" id="fieldName"></div><div class="field-fx" id="fieldFx"></div></span><span class="field-chev" aria-hidden="true"></span></div>
+<div class="field-more" id="fieldMore" hidden></div>
 <div class="radar" id="radar" hidden><span class="balls" id="balls"></span><span class="radar-note" id="radarNote"></span><button class="summon" type="button" id="summonBtn" hidden>Summon</button></div>
 <div class="wish-chip" id="wishChip" hidden></div>
 <div class="power" id="power" hidden></div>
@@ -830,7 +844,77 @@ function renderField() {
   $('fieldIc').textContent = f.icon;
   $('fieldName').textContent = f.name;
   $('fieldFx').textContent = f.fx;
+  if (!$('fieldMore').hidden) renderFieldMore();
 }
+// Tapping the battlefield explains it: what it does, which tiles it touches
+// and when it changes. Only today's; the next one stays a surprise.
+// The numbers mirror Battle module 7.
+function fieldDetailOf(f, state) {
+  const crit = Number(state && state.crit_chance) || 0.05;
+  const pct = x => Math.round(x * 100) + '%';
+  switch (f.key) {
+    case 'calm': return 'A quiet day. No boosts and no penalties: every habit hits the boss exactly as usual.';
+    case 'gravity': return 'Every <b>workout</b> does <b>1.5× damage</b> to the boss, both the workout tiles and synced Strava sessions.';
+    case 'dawn': return 'Every <b>Morning</b> habit does <b>1.5× damage</b> to the boss.';
+    case 'dusk': return 'Every <b>Evening</b> habit does <b>1.5× damage</b> to the boss.';
+    case 'zenkai': return 'Every hit on the boss does <b>20% more damage</b>, whatever the habit, Strava workouts included.';
+    case 'crit': return 'Your crit chance goes from <b>' + pct(crit) + '</b> to <b>' + pct(crit + 0.15) + '</b> on every hit. A crit does 1.5× damage.';
+    case 'senzu': return 'Healing habits heal Goku <b>twice as much</b>, and you can heal up to <b>100 HP</b> today instead of ' + (Number(state && state.heal_cap) || 50) + '.';
+    case 'enraged': return 'Bad habits hurt Goku <b>twice as much</b> today. Good habits hit the boss as usual.';
+    case 'dragon': return 'Dragon Balls drop <b>three times as often</b> when you hit the boss, and a Strava workout is the best chance.';
+    default: return '';
+  }
+}
+function nextRolloverOf(now) {
+  const today = dayKey(now);
+  let t = now;
+  while (dayKey(t) === today) t += 3600000;
+  t -= 3600000;
+  while (dayKey(t) === today) t += 60000;
+  return t;
+}
+function renderFieldMore() {
+  const f = todayField();
+  const state = latestState || {};
+  const habits = Array.isArray(state.habits) ? state.habits : [];
+  const touched = habits.filter(h => fieldBoostOf(h, healOf(h)));
+  const box = $('fieldMore');
+  box.replaceChildren();
+  const intro = document.createElement('p');
+  intro.textContent = 'Every day at 04:00 a new battlefield rolls. It changes how hits land, for that game day only.';
+  const detail = document.createElement('p');
+  detail.innerHTML = fieldDetailOf(f, state);
+  box.append(intro, detail);
+  if (touched.length) {
+    const hits = document.createElement('div');
+    hits.className = 'fm-hits';
+    for (const h of touched) {
+      const chip = document.createElement('span');
+      chip.textContent = (h.icon ? h.icon + ' ' : '') + (h.name || h.key) + ' ' + fieldBoostOf(h, healOf(h)).tag;
+      hits.append(chip);
+    }
+    box.append(hits);
+  }
+  const left = Math.max(0, nextRolloverOf(Date.now()) - Date.now());
+  const hours = Math.floor(left / 3600000);
+  const mins = Math.floor((left % 3600000) / 60000);
+  const when = document.createElement('div');
+  when.className = 'fm-when';
+  when.textContent = 'Changes in ' + (hours ? hours + 'h ' : '') + mins + 'm · the next one is a surprise';
+  box.append(when);
+}
+function toggleFieldMore(event) {
+  if (event) event.stopPropagation();
+  const open = $('fieldMore').hidden;
+  if (open) renderFieldMore();
+  $('fieldMore').hidden = !open;
+  $('field').classList.toggle('open', open);
+  $('field').setAttribute('aria-expanded', String(open));
+}
+$('field').addEventListener('click', toggleFieldMore);
+$('field').addEventListener('keydown', event => {
+  if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); toggleFieldMore(event); }
+});
 // The tiles the day's battlefield boosts carry a small tag.
 function fieldBoostOf(habit, heals) {
   const f = todayField();
