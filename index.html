@@ -366,7 +366,7 @@ body{width:100vw;height:100vh;height:100dvh}
 .summon[hidden]{display:none}
 .wish-chip{margin:8px 0 0;padding:7px 12px;border-radius:12px;font-size:12px;font-weight:800;color:#b9ffd2;background:rgba(80,255,150,.1);border:1px solid rgba(80,255,150,.3)}
 .wish-chip[hidden]{display:none}
-.ball i b,.ball-drop i b{display:flex;justify-content:center;font-weight:inherit;white-space:nowrap}
+.ball i b,.ball-drop i b{position:absolute;transform:translate(-50%,-50%);font-weight:inherit;line-height:1}
 .ball-drop{position:absolute;left:50%;top:44%;z-index:9;width:92px;height:92px;margin:-46px 0 0 -46px;border-radius:50%;pointer-events:none;background:radial-gradient(circle at 35% 30%,#fff6c8 0,#ffc23a 22%,#ff8a00 60%,#c24e00 100%);box-shadow:0 0 60px rgba(255,150,20,.8);animation:ballDrop 2200ms cubic-bezier(.2,.9,.3,1) forwards}
 .ball-drop i{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0;font-style:normal;font-size:16px;line-height:15px;color:#d0140b;letter-spacing:-.04em}
 @keyframes ballDrop{0%{opacity:0;transform:translateY(-160px) scale(.3) rotate(-240deg)}35%{opacity:1;transform:translateY(0) scale(1.1) rotate(0)}45%{transform:scale(.95)}75%{opacity:1;transform:scale(1)}100%{opacity:0;transform:translateY(-120px) scale(.2)}}
@@ -1014,15 +1014,30 @@ function revealField() {
 // up. With all seven, Shenron grants one wish.
 const ALL_BALLS = 127;
 let shownBalls = null;
-// The red stars on a ball, in fixed rows like the real ones (six is two rows
-// of three), so the pattern doesn't depend on how wide a star renders.
-const STAR_ROWS = { 1: [1], 2: [2], 3: [2, 1], 4: [2, 2], 5: [2, 1, 2], 6: [3, 3], 7: [2, 3, 2] };
+// The red stars on a ball, placed like the real ones: one in the middle, then
+// a pair, a triangle and a square; five is the square with a middle star, six
+// a pentagon around one and seven a hexagon around one. Positions are % of the ball.
+const ring = (count, r, turn) => Array.from({ length: count }, (_, k) => {
+  const a = (turn + k * 360 / count) * Math.PI / 180;
+  return [50 + r * Math.cos(a), 50 + r * Math.sin(a)];
+});
+const STAR_SPOTS = {
+  1: [[50, 50]],
+  2: [[33, 50], [67, 50]],
+  3: ring(3, 20, -90),
+  4: ring(4, 21, -135),
+  5: [[50, 50]].concat(ring(4, 26, -135)),
+  6: [[50, 50]].concat(ring(5, 27, -90)),
+  7: [[50, 50]].concat(ring(6, 27, 0))
+};
 function starsOf(n) {
   const i = document.createElement('i');
-  for (const count of STAR_ROWS[n] || [n]) {
-    const row = document.createElement('b');
-    row.textContent = '★'.repeat(count);
-    i.append(row);
+  for (const [x, y] of STAR_SPOTS[n] || STAR_SPOTS[1]) {
+    const star = document.createElement('b');
+    star.textContent = '★';
+    star.style.left = x.toFixed(1) + '%';
+    star.style.top = y.toFixed(1) + '%';
+    i.append(star);
   }
   return i;
 }
