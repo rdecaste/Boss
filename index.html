@@ -526,14 +526,14 @@ body{width:100vw;height:100vh;height:100dvh}
 </main>
 </div>
 <script>
-// Same-origin (GitHub Pages) rather than raw.githubusercontent: Pages purges
-// its CDN on deploy, raw does not. Measured 58s vs >200s to reflect an update.
-const STATE_URL = 'data.json';
-// Make scenarios 9849975 "Battle — Record Habit Event" and 9852609 "Battle —
-// Revert Event". Both check the passcode, so these URLs being public in this
-// repo does not let anyone else attack or heal the boss.
-const ATTACK_URL = 'https://hook.eu2.make.com/473lvjmuusks2syjve4y2mrco5eye82d';
-const REVERT_URL = 'https://hook.eu2.make.com/91jpq9bav3688kr4mt21obvqx63w04x7';
+// The Quest Engine Worker (~/code/quest-engine) serves the card state and
+// handles attacks and reverts. It updates the state before it replies, so the
+// card no longer waits for GitHub Pages. Attack and revert check the passcode,
+// so these URLs being public does not let anyone else attack or heal the boss.
+const ENGINE_URL = 'https://quest-engine.quest-engine.workers.dev';
+const STATE_URL = ENGINE_URL + '/boss';
+const ATTACK_URL = ENGINE_URL + '/attack';
+const REVERT_URL = ENGINE_URL + '/revert';
 // Make scenario 9867207 "Boss — Claim Victory & Summon Next", passcode-checked
 // like the two above. Claiming a combat victory starts Boss Spawn.
 const CLAIM_URL = 'https://hook.eu2.make.com/5w5cvi610z5actjsftn78b91peyd1usn';
@@ -545,8 +545,8 @@ const REFRESH_MS = 15000;
 const CROSSFADE_MS = 1200;
 const CROSSFADE_LEAD_MS = 60;
 const HOLD_MS = 600;
-// Pages takes about a minute to serve a new data.json; until then what this
-// page just did is shown instead of the stale file.
+// Claim Victory still runs in Make, and the Worker picks its changes up within
+// about 2 minutes; until then what this page just did is shown instead.
 const PENDING_MS = 180000;
 const FRESH_MS = 60000;
 const TIME_ZONE = 'Europe/Amsterdam';
@@ -672,7 +672,7 @@ async function post(url, fields) {
   try { return JSON.parse(text); } catch (_) { throw new Error(text || 'No response'); }
 }
 function failMessage(error) {
-  return error instanceof TypeError ? 'Could not reach Make. Try again.' : error.message;
+  return error instanceof TypeError ? 'Could not reach the server. Try again.' : error.message;
 }
 
 // ---- Time since ----
