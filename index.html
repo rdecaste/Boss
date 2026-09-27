@@ -251,7 +251,7 @@ body{width:100vw;height:100vh;height:100dvh}
 .loot-count{font-size:11px;font-weight:850;letter-spacing:.1em;color:#ffc23a}
 .loot-balls{display:flex;justify-content:space-between;gap:4px;margin:12px 0 4px}
 .loot-balls .ball{width:36px;height:36px}
-.loot-balls .ball i{font-size:9px;line-height:8px;padding:7px}
+.loot-balls .ball i{font-size:9px;line-height:8px}
 .loot-summon{display:block;width:100%;margin-top:10px;padding:9px 10px}
 .loot-summon[hidden]{display:none}
 .loot-about{margin:10px 0 0;font-size:12px;line-height:1.45;color:var(--muted)}
@@ -264,7 +264,7 @@ body{width:100vw;height:100vh;height:100dvh}
 .loot-list .when{margin-left:auto;flex:none;font-size:11px;color:var(--dim)}
 .loot-list .where{color:var(--muted);font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .loot-list .ball{flex:none;width:18px;height:18px}
-.loot-list .ball i{font-size:5px;line-height:4px;padding:4px}
+.loot-list .ball i{font-size:5px;line-height:4.5px}
 .hall{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:12px 0}
 .hall-sum{margin:0 2px 10px;font-size:9px;font-weight:850;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
 .hall-sum b{color:#ffd35a}
@@ -358,7 +358,7 @@ body{width:100vw;height:100vh;height:100dvh}
 .balls{display:flex;gap:5px}
 .ball{position:relative;width:20px;height:20px;border-radius:50%;background:rgba(255,255,255,.07);border:1px dashed rgba(255,255,255,.18)}
 .ball.on{border:0;background:radial-gradient(circle at 35% 30%,#fff6c8 0,#ffc23a 22%,#ff8a00 60%,#c24e00 100%);box-shadow:0 0 10px rgba(255,150,20,.55)}
-.ball i{position:absolute;inset:0;display:flex;flex-wrap:wrap;align-content:center;justify-content:center;font-style:normal;font-size:6px;line-height:5px;color:#d0140b;padding:4px}
+.ball i{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-style:normal;font-size:6px;line-height:5px;color:#d0140b;padding:0;letter-spacing:-.04em}
 .ball.new{animation:ballIn 900ms cubic-bezier(.2,.9,.3,1.4)}
 @keyframes ballIn{0%{transform:scale(0) rotate(-180deg)}70%{transform:scale(1.5)}100%{transform:none}}
 .radar-note{font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);white-space:nowrap}
@@ -366,8 +366,9 @@ body{width:100vw;height:100vh;height:100dvh}
 .summon[hidden]{display:none}
 .wish-chip{margin:8px 0 0;padding:7px 12px;border-radius:12px;font-size:12px;font-weight:800;color:#b9ffd2;background:rgba(80,255,150,.1);border:1px solid rgba(80,255,150,.3)}
 .wish-chip[hidden]{display:none}
+.ball i b,.ball-drop i b{display:flex;justify-content:center;font-weight:inherit;white-space:nowrap}
 .ball-drop{position:absolute;left:50%;top:44%;z-index:9;width:92px;height:92px;margin:-46px 0 0 -46px;border-radius:50%;pointer-events:none;background:radial-gradient(circle at 35% 30%,#fff6c8 0,#ffc23a 22%,#ff8a00 60%,#c24e00 100%);box-shadow:0 0 60px rgba(255,150,20,.8);animation:ballDrop 2200ms cubic-bezier(.2,.9,.3,1) forwards}
-.ball-drop i{position:absolute;inset:0;display:flex;flex-wrap:wrap;align-content:center;justify-content:center;padding:22px;font-style:normal;font-size:16px;line-height:15px;color:#d0140b}
+.ball-drop i{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0;font-style:normal;font-size:16px;line-height:15px;color:#d0140b;letter-spacing:-.04em}
 @keyframes ballDrop{0%{opacity:0;transform:translateY(-160px) scale(.3) rotate(-240deg)}35%{opacity:1;transform:translateY(0) scale(1.1) rotate(0)}45%{transform:scale(.95)}75%{opacity:1;transform:scale(1)}100%{opacity:0;transform:translateY(-120px) scale(.2)}}
 /* Shenron: the wish screen */
 .shenron{position:absolute;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;padding:22px 16px;background:radial-gradient(90% 60% at 50% 30%,rgba(60,255,140,.3),transparent 70%),rgba(2,8,5,.96);animation:victoryIn 700ms ease-out forwards;cursor:default}
@@ -1013,10 +1014,16 @@ function revealField() {
 // up. With all seven, Shenron grants one wish.
 const ALL_BALLS = 127;
 let shownBalls = null;
-// The red stars on a ball, one element each so they wrap into a cluster.
+// The red stars on a ball, in fixed rows like the real ones (six is two rows
+// of three), so the pattern doesn't depend on how wide a star renders.
+const STAR_ROWS = { 1: [1], 2: [2], 3: [2, 1], 4: [2, 2], 5: [2, 1, 2], 6: [3, 3], 7: [2, 3, 2] };
 function starsOf(n) {
   const i = document.createElement('i');
-  for (let k = 0; k < n; k++) { const star = document.createElement('span'); star.textContent = '★'; i.append(star); }
+  for (const count of STAR_ROWS[n] || [n]) {
+    const row = document.createElement('b');
+    row.textContent = '★'.repeat(count);
+    i.append(row);
+  }
   return i;
 }
 function ballEl(n, on) {
