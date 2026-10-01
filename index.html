@@ -337,6 +337,25 @@ body{width:100vw;height:100vh;height:100dvh}
 .field-more .fm-hits span{padding:2px 7px;border-radius:8px;background:rgba(255,255,255,.06);font-size:11px;font-weight:700;color:#fff}
 .field-more .fm-when{margin-top:8px;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
 @media(prefers-reduced-motion:reduce){.field-chev{transition:none}}
+.win{position:relative;overflow:hidden;display:flex;gap:12px;align-items:flex-start;margin:8px 0 0;padding:12px;border:1px solid rgba(255,211,90,.35);border-radius:14px;background:linear-gradient(120deg,rgba(255,211,90,.12),rgba(255,255,255,.02) 70%)}
+.win[hidden]{display:none}
+.win.done{border-color:rgba(125,255,176,.35);background:linear-gradient(120deg,rgba(125,255,176,.1),rgba(255,255,255,.02) 70%)}
+.win-cb{flex:none;display:grid;place-items:center;width:32px;height:32px;margin:0;padding:0;border-radius:9px;border:2px solid rgba(255,211,90,.75);background:rgba(0,0,0,.25);color:#1a1200;font:inherit;font-size:18px;font-weight:900;line-height:1;cursor:pointer;touch-action:pan-y;-webkit-user-select:none;user-select:none;transition:background .2s,border-color .2s}
+.win.done .win-cb{background:#7dffb0;border-color:#7dffb0;cursor:default}
+.win-cb:focus-visible{outline:2px solid var(--warm);outline-offset:2px}
+.win-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
+.win-kicker{font-size:8px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#ffd35a}
+.win.done .win-kicker{color:#7dffb0}
+.win-text{font-size:14px;font-weight:800;line-height:1.3;letter-spacing:-.01em;overflow-wrap:anywhere}
+.win.done .win-text{color:var(--muted);text-decoration:line-through;text-decoration-color:rgba(125,255,176,.5)}
+.win-meta{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:9px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.win-meta .dmg{color:#ffd35a}
+.win-meta .ouch{color:#ff8f8f}
+.win-meta .ok{color:#7dffb0}
+.win .charge{position:absolute;top:0;bottom:0;left:0;width:0;background:linear-gradient(90deg,transparent,#ffd35a);opacity:.25;pointer-events:none}
+.win.is-charging .charge{width:100%;transition:width var(--hold-ms) linear}
+.win.is-sending .win-cb{animation:pulse 900ms ease-in-out infinite}
+@keyframes pulse{50%{opacity:.45}}
 .field.calm{border-color:var(--line);background:rgba(255,255,255,.03)}
 .field.enraged{border-color:rgba(255,95,95,.35);background:linear-gradient(120deg,rgba(255,95,95,.12),rgba(255,255,255,.02))}
 .fieldtag{flex:none;padding:1px 5px;border-radius:5px;font-size:9px;font-weight:900;letter-spacing:.04em;color:#1a1200;background:#ffd35a}
@@ -446,6 +465,7 @@ body{width:100vw;height:100vh;height:100dvh}
 <div class="pad" id="pad">
 <div class="field" id="field" role="button" tabindex="0" aria-expanded="false" aria-controls="fieldMore" hidden><span class="field-ic" id="fieldIc"></span><span class="field-txt"><span class="label">Today's battlefield</span><div class="field-name" id="fieldName"></div><div class="field-fx" id="fieldFx"></div></span><span class="field-chev" aria-hidden="true"></span></div>
 <div class="field-more" id="fieldMore" hidden></div>
+<div class="win" id="win" hidden><button class="win-cb" type="button" id="winCb" role="checkbox" aria-checked="false" aria-label="Hold to tick off today's win"></button><div class="win-body"><div class="win-kicker">Today is a win if…</div><div class="win-text" id="winText"></div><div class="win-meta" id="winMeta"></div></div><span class="charge"></span></div>
 <div class="radar" id="radar" role="button" tabindex="0" aria-expanded="false" aria-controls="radarMore" hidden><span class="balls" id="balls"></span><span class="radar-note" id="radarNote"></span><button class="summon" type="button" id="summonBtn" hidden>Summon</button></div>
 <div class="field-more" id="radarMore" hidden></div>
 <div class="wish-chip" id="wishChip" hidden></div>
@@ -537,6 +557,9 @@ const REVERT_URL = ENGINE_URL + '/revert';
 // Claiming a combat victory (passcode-checked like the two above) starts the
 // Worker's boss spawn: a new image and video, then the new fight.
 const CLAIM_URL = ENGINE_URL + '/claim';
+// Today's "Today is a win if…" from the journal: held on the card, it hits the
+// boss once and marks the To-Do Done in Notion (passcode-checked too).
+const WIN_URL = ENGINE_URL + '/win';
 const STUCK_MS = 21 * 60 * 1000;
 const PASSCODE_KEY = 'boss-revert-passcode';
 const TAB_KEY = 'boss-tab';
@@ -601,7 +624,7 @@ document.addEventListener('visibilitychange', () => {
 cardEl.addEventListener('click', event => {
   // A swipe or hold ends in a click on some browsers; an open row closes on the next tap.
   if (suppressClick) { suppressClick = false; return; }
-  if (event.target.closest('.row-action, .tile, .tabs, .filters, .v-btn, .radar, .shenron, .field-reveal, .loot')) return;
+  if (event.target.closest('.row-action, .tile, .win, .tabs, .filters, .v-btn, .radar, .shenron, .field-reveal, .loot')) return;
   if (openRow) { closeOpenRow(); return; }
   if (busy) return;
   const flipped = cardEl.classList.contains('is-flipped');
@@ -1340,6 +1363,113 @@ function renderPower(state) {
   }
 }
 
+// ---- Today's win ----
+// The sentence written in the morning journal, under the battlefield. Holding
+// the box ticks it off: one hit on the boss and Done in Notion, once only. Not
+// done by 03:00 costs Goku a hit (the Worker decides that).
+function hoursToWinEnd(now) {
+  // The journal day ends at 03:00 Amsterdam.
+  const hour = Number(new Intl.DateTimeFormat('en-GB', { timeZone: TIME_ZONE, hour: '2-digit', hourCycle: 'h23' }).format(now));
+  return (27 - hour) % 24 || 24;
+}
+function renderWin(state) {
+  const win = state && state.win;
+  const el = $('win');
+  el.hidden = !(win && win.text);
+  if (el.hidden) return;
+  const done = Number(win.done) === 1;
+  el.classList.toggle('done', done);
+  $('winCb').textContent = done ? '✓' : '';
+  $('winCb').setAttribute('aria-checked', String(done));
+  $('winCb').setAttribute('aria-label', done ? 'Today\'s win is done' : 'Hold to tick off today\'s win');
+  $('winText').textContent = win.text;
+  const range = (a, b) => a == null ? '' : a === b ? String(a) : a + '–' + b;
+  const meta = [];
+  if (done) {
+    meta.push('<span class="ok">Done' + (win.hit && win.hit.damage ? ' · hit for ' + Number(win.hit.damage).toLocaleString() + (win.hit.crit ? ' ⚡' : '') : '') + '</span>');
+  } else {
+    if (win.dmg_min != null) meta.push('<span class="dmg">Hits for ' + range(win.dmg_min, win.dmg_max) + '</span>');
+    const left = hoursToWinEnd(new Date());
+    if (win.miss_min != null) meta.push('<span class="' + (left <= 5 ? 'ouch' : '') + '">' + (left <= 5 ? left + ' h left · ' : '') + 'Goku −' + range(win.miss_min, win.miss_max) + ' at 03:00 if not done</span>');
+  }
+  $('winMeta').innerHTML = meta.join('');
+}
+let winSending = false;
+async function tickWin() {
+  const win = latestState && latestState.win;
+  if (!win || Number(win.done) === 1 || winSending) return;
+  if (busy || attackQueue.length) { showToast('Hang on, a hit is still on its way.'); return; }
+  const passcode = askPasscode();
+  if (!passcode) return;
+  busy = true;
+  winSending = true;
+  $('win').classList.add('is-sending');
+  try {
+    const data = await post(WIN_URL, { todo_id: win.id, passcode });
+    const result = data.result ? Object.assign({}, data.result, { event_id: data.event_id }) : data;
+    if (result.code === 'bad_passcode') savePasscode('');
+    const nowDone = data.win && Number(data.win.done) === 1;
+    if (!nowDone && !result.ok) throw new Error(result.text || result.message || 'The win did not go through');
+    savePasscode(passcode);
+    let next = latestState;
+    const expect = [];
+    if (result.code === 'hit') {
+      const before = hpShare(latestState, 'boss');
+      next = withHit(latestState, result, 'win');
+      expect.push({ kind: 'add', id: String(result.event_id || '').replace(/-/g, '') });
+      next.win = data.win || Object.assign({}, win, { done: 1, hit: { id: expect[0].id, damage: Number(result.damage) || 0, crit: result.critical ? 1 : 0 } });
+      applyLocal(next, expect);
+      landOnPad(result, 'boss', before);
+      if (Number(result.dragon_ball) > 0) playBallDrop(Number(result.dragon_ball));
+    } else {
+      next = Object.assign({}, latestState, { win: data.win || Object.assign({}, win, { done: 1 }) });
+      applyLocal(next, []);
+    }
+    showToast(result.text || result.message || 'Today\'s win is done.');
+  } catch (error) {
+    showToast(failMessage(error), true);
+  } finally {
+    busy = false;
+    winSending = false;
+    $('win').classList.remove('is-sending');
+    sendAttacks();
+  }
+}
+(function attachWinHold() {
+  const el = $('win'), box = $('winCb');
+  let timer = null, startX = 0, startY = 0, pointerId = null;
+  const cancel = () => { clearTimeout(timer); timer = null; pointerId = null; el.classList.remove('is-charging'); };
+  const open = () => latestState && latestState.win && Number(latestState.win.done) !== 1 && !winSending;
+  box.addEventListener('pointerdown', event => {
+    if (!open() || event.button > 0) return;
+    pointerId = event.pointerId;
+    startX = event.clientX;
+    startY = event.clientY;
+    el.classList.add('is-charging');
+    timer = setTimeout(() => {
+      timer = null;
+      el.classList.remove('is-charging');
+      suppressClick = true;
+      setTimeout(() => { suppressClick = false; }, 400);
+      tickWin();
+    }, HOLD_MS);
+  });
+  box.addEventListener('pointermove', event => {
+    if (event.pointerId !== pointerId || !timer) return;
+    if (Math.abs(event.clientX - startX) > 10 || Math.abs(event.clientY - startY) > 10) cancel();
+  });
+  box.addEventListener('pointerup', event => {
+    if (event.pointerId !== pointerId) return;
+    if (timer) showToast('Hold to tick off today\'s win. It counts once.');
+    cancel();
+  });
+  box.addEventListener('pointercancel', cancel);
+  box.addEventListener('pointerleave', cancel);
+  box.addEventListener('keydown', event => {
+    if ((event.key === 'Enter' || event.key === ' ') && open()) { event.preventDefault(); tickWin(); }
+  });
+})();
+
 function attachHold(tile) {
   let timer = null, startX = 0, startY = 0, pointerId = null;
   const cancel = () => {
@@ -1934,6 +2064,7 @@ function renderState(state) {
   }
   renderDamage(state);
   renderField();
+  renderWin(state);
   renderRadar(state);
   renderPower(state);
   renderVictory(state);
