@@ -475,6 +475,7 @@ body{width:100vw;height:100vh;height:100dvh}
 <section class="sec" data-sec="evening" hidden><button class="sec-head" type="button" aria-expanded="true"><span class="label">🌙 Evening</span><span class="sec-count"></span><span class="chev" aria-hidden="true"></span></button><div class="tiles" id="eveningTiles"></div></section>
 <section class="sec" data-sec="weekly" hidden><button class="sec-head" type="button" aria-expanded="true"><span class="label">🗓️ Weekly</span><span class="sec-count"></span><span class="chev" aria-hidden="true"></span></button><div class="tiles" id="weeklyTiles"></div></section>
 <section class="sec" data-sec="bad" hidden><button class="sec-head" type="button" aria-expanded="true"><span class="label">Bad habits</span><span class="sec-count"></span><span class="chev" aria-hidden="true"></span></button><div class="tiles" id="badTiles"></div></section>
+<section class="sec" data-sec="auto" hidden><button class="sec-head" type="button" aria-expanded="true"><span class="label">🔄 Automatic</span><span class="sec-count"></span><span class="chev" aria-hidden="true"></span></button><div class="tiles" id="autoTiles"></div></section>
 <section class="sec" data-sec="workout" hidden><button class="sec-head" type="button" aria-expanded="true"><span class="label">Workouts</span><span class="sec-count"></span><span class="chev" aria-hidden="true"></span></button><div class="tiles" id="workoutTiles"></div></section>
 </div>
 <div class="hint">Hold to attack · Tap the header to flip</div>
@@ -724,7 +725,13 @@ function lastDone(habit) {
 // The publisher sends the group (good, bad, workout) and, for good habits, the
 // Section set in Notion; a good habit without one goes under Day. Older
 // data.json files fall back to the effect.
-const SECTIONS = ['morning', 'day', 'evening', 'weekly', 'bad', 'workout'];
+const SECTIONS = ['morning', 'day', 'evening', 'weekly', 'bad', 'auto', 'workout'];
+// Habits the Worker's syncs log by themselves get their own section: Weigh-in
+// (Withings), Got up at 6 and Meditation (Apple Health). Holding the tile
+// still works when a sync missed one. Strava workouts keep their own section.
+const AUTO_KEYS = new Set(['weigh_in', 'up_at_6', 'meditation']);
+// Where a tile sits; groupOf stays the habit's own group, which the battlefield tags use.
+const placeOf = habit => AUTO_KEYS.has(habit.key) ? 'auto' : groupOf(habit);
 function groupOf(habit) {
   const group = habit.group || (habit.effect === 'Hero HP' ? 'bad' : habit.last_strava ? 'workout' : 'good');
   if (group !== 'good') return group;
@@ -735,11 +742,11 @@ let tilesSignature = '';
 function renderTiles() {
   const habits = (latestState && Array.isArray(latestState.habits)) ? latestState.habits : [];
   const lists = Object.fromEntries(SECTIONS.map(section => [section, $(section + 'Tiles')]));
-  const signature = habits.map(h => groupOf(h) + ':' + h.key).join(',');
+  const signature = habits.map(h => placeOf(h) + ':' + h.key).join(',');
   if (signature !== tilesSignature) {
     tilesSignature = signature;
     for (const list of Object.values(lists)) list.replaceChildren();
-    for (const habit of habits) (lists[groupOf(habit)] || lists.day).append(buildTile(habit));
+    for (const habit of habits) (lists[placeOf(habit)] || lists.day).append(buildTile(habit));
     for (const list of Object.values(lists)) list.closest('.sec').hidden = !list.children.length;
   }
   const tiles = new Map([...document.querySelectorAll('.tile')].map(tile => [tile.dataset.key, tile]));
@@ -753,7 +760,7 @@ function renderSectionCounts(habits) {
   const today = dayKey(Date.now());
   const thisWeek = weekKey(Date.now());
   for (const section of SECTIONS) {
-    const inSection = habits.filter(h => groupOf(h) === section);
+    const inSection = habits.filter(h => placeOf(h) === section);
     const weekly = section === 'weekly';
     const done = inSection.filter(h => {
       const at = Date.parse(lastDone(h).at || '');
