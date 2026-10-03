@@ -734,9 +734,11 @@ function lastDone(habit) {
 // data.json files fall back to the effect.
 const SECTIONS = ['morning', 'day', 'evening', 'weekly', 'bad', 'auto', 'workout'];
 // Habits the Worker's syncs log by themselves get their own section: Weigh-in
-// (Withings), Got up at 6 and Meditation (Apple Health). Holding the tile
-// still works when a sync missed one. Strava workouts keep their own section.
-const AUTO_KEYS = new Set(['weigh_in', 'up_at_6', 'meditation']);
+// (Withings), Got up at 6 and Meditation (Apple Health), Morning review and
+// Evening review (the journal page's Start my day / End my day, since 3 Oct
+// 2026). Holding the tile still works when a sync missed one. Strava workouts
+// keep their own section.
+const AUTO_KEYS = new Set(['weigh_in', 'up_at_6', 'meditation', 'morning_review', 'evening_review']);
 // Where a tile sits; groupOf stays the habit's own group, which the battlefield tags use.
 const placeOf = habit => AUTO_KEYS.has(habit.key) ? 'auto' : groupOf(habit);
 function groupOf(habit) {
