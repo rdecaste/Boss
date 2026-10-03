@@ -359,6 +359,28 @@ body{width:100vw;height:100vh;height:100dvh}
 .win-meta .dmg{color:#ffd35a}
 .win-meta .ouch{color:#ff8f8f}
 .win-meta .ok{color:#7dffb0}
+.bossai{display:flex;flex-direction:column;gap:7px;margin:8px 0 0;padding:12px;border:1px solid rgba(255,95,95,.32);border-radius:14px;background:linear-gradient(120deg,rgba(255,95,95,.1),rgba(255,255,255,.02) 70%)}
+.bossai[hidden]{display:none}
+.bai-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.bai-kicker{font-size:8px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#ff8f8f}
+.bai-dmg{font-size:15px;font-weight:900;letter-spacing:-.01em;color:#ff8f8f;white-space:nowrap}
+.bai-dmg small{margin-left:5px;font-size:9px;font-weight:800;letter-spacing:.08em;color:var(--dim)}
+.bossai.whiff .bai-dmg{color:#7dffb0}
+.bai-bar{position:relative;height:6px;border-radius:999px;background:rgba(255,95,95,.28);overflow:hidden}
+.bai-bar>span{position:absolute;top:0;bottom:0;left:0;width:0;border-radius:inherit;background:linear-gradient(90deg,#7dffb0,#43d17f);transition:width 400ms ease}
+.bai-bar.rage{background:rgba(255,255,255,.08)}
+.bai-bar.rage>span{background:linear-gradient(90deg,var(--warm),var(--hot))}
+.bossai.raging .bai-bar.rage>span{animation:pulse 900ms ease-in-out infinite}
+.bai-meta{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:9px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.bai-meta .ok{color:#7dffb0}
+.bai-meta .ouch{color:#ff8f8f}
+.bai-rage{display:flex;flex-direction:column;gap:5px;padding-top:4px;border-top:1px solid var(--line)}
+.bai-threats{display:flex;flex-wrap:wrap;gap:5px}
+.bai-threats[hidden]{display:none}
+.bai-threat{padding:4px 8px;border-radius:999px;border:1px solid rgba(255,95,95,.35);background:rgba(255,95,95,.08);font-size:10px;font-weight:800;color:var(--muted)}
+.bai-threat b{color:#ff8f8f;font-weight:900}
+.row.ko .hit-dmg{color:#ff8f8f}
+.row.ko .hit{background:linear-gradient(100deg,rgba(255,95,95,.12),rgba(255,255,255,.03) 60%)}
 .win .charge{position:absolute;top:0;bottom:0;left:0;width:0;background:linear-gradient(90deg,transparent,#ffd35a);opacity:.25;pointer-events:none}
 .win.is-charging .charge{width:100%;transition:width var(--hold-ms) linear}
 .win.is-sending .win-cb{animation:pulse 900ms ease-in-out infinite}
@@ -473,6 +495,7 @@ body{width:100vw;height:100vh;height:100dvh}
 <div class="field" id="field" role="button" tabindex="0" aria-expanded="false" aria-controls="fieldMore" hidden><span class="field-ic" id="fieldIc"></span><span class="field-txt"><span class="label">Today's battlefield</span><div class="field-name" id="fieldName"></div><div class="field-fx" id="fieldFx"></div></span><span class="field-chev" aria-hidden="true"></span></div>
 <div class="field-more" id="fieldMore" hidden></div>
 <div class="win" id="win" hidden><button class="win-cb" type="button" id="winCb" role="checkbox" aria-checked="false" aria-label="Hold to tick off today's win"></button><div class="win-body"><div class="win-kicker">Today is a win if…</div><div class="win-text" id="winText"></div><div class="win-meta" id="winMeta"></div></div><span class="charge"></span></div>
+<div class="bossai" id="bossAi" hidden><div class="bai-head"><span class="bai-kicker" id="baiKicker">👊 The boss's turn · 04:00</span><span class="bai-dmg" id="baiDmg"></span></div><div class="bai-bar" aria-hidden="true"><span id="baiBlock"></span></div><div class="bai-meta" id="baiMeta"></div><div class="bai-threats" id="baiThreats" hidden></div><div class="bai-rage" id="baiRageBox" hidden><div class="bai-head"><span class="bai-kicker">😤 Rage meter</span><span class="bai-meta" id="baiRageTxt"></span></div><div class="bai-bar rage" aria-hidden="true"><span id="baiRage"></span></div><div class="bai-meta" id="baiRageMeta"></div></div></div>
 <div class="radar" id="radar" role="button" tabindex="0" aria-expanded="false" aria-controls="radarMore" hidden><span class="balls" id="balls"></span><span class="radar-note" id="radarNote"></span><button class="summon" type="button" id="summonBtn" hidden>Summon</button></div>
 <div class="field-more" id="radarMore" hidden></div>
 <div class="wish-chip" id="wishChip" hidden></div>
@@ -1419,6 +1442,74 @@ function renderWin(state) {
   }
   $('winMeta').innerHTML = meta.join('');
 }
+// The boss fights back (Quest Engine src/bossai.js): its turn at 04:00 and
+// what today has blocked of it, the neglect strikes waiting, and the rage
+// meter, which fills over waking hours (07:00-23:00) without an attack. The
+// Worker sends the meter as `base` hours at `since`; the waking hours after
+// that are added here, so the meter moves between refreshes. Ranges are at
+// today's level, before the ki shield; an Enraged battlefield doubles them.
+const amsHourFormat = new Intl.DateTimeFormat('en-GB', { timeZone: TIME_ZONE, hour: '2-digit', hourCycle: 'h23' });
+const amsDayFormat = new Intl.DateTimeFormat('en-CA', { timeZone: TIME_ZONE, year: 'numeric', month: '2-digit', day: '2-digit' });
+function rageHours(rage, now) {
+  if (!rage) return 0;
+  const today = amsDayFormat.format(new Date(now));
+  const since = Date.parse(rage.since);
+  if (isNaN(since)) return 0;
+  let hours = amsDayFormat.format(new Date(since)) === today ? Number(rage.base) || 0 : 0;
+  const step = 5 * 60000;
+  for (let t = Math.max(since, now - 24 * 3600000); t < now; t += step) {
+    if (amsDayFormat.format(new Date(t)) !== today) continue;
+    const h = Number(amsHourFormat.format(new Date(t)));
+    if (h >= rage.start && h < rage.end) hours += Math.min(step, now - t) / 3600000;
+  }
+  return Math.min(Number(rage.fill) || 6, hours);
+}
+function renderBossAi(state) {
+  const ai = state && state.boss_ai;
+  const el = $('bossAi');
+  el.hidden = !(ai && ai.turn) || state.status !== 'Active';
+  if (el.hidden) return;
+  const x2 = todayField().key === 'enraged' ? 2 : 1;
+  const range = (a, b) => { a = Math.round((Number(a) || 0) * x2); b = Math.round((Number(b) || 0) * x2); return a === b ? String(a) : a + '–' + b; };
+  const t = ai.turn;
+  const block = Math.max(0, Math.min(100, Number(t.block) || 0));
+  el.classList.toggle('whiff', block >= 100);
+  $('baiDmg').innerHTML = block >= 100 ? 'Blocked' : 'Goku −' + range(t.min, t.max) + (block ? '<small>of ' + range(t.full_min, t.full_max) + '</small>' : '');
+  $('baiBlock').style.width = block + '%';
+  const names = { habits: n => n + (n === 1 ? ' habit' : ' habits'), workouts: n => n + (n === 1 ? ' workout' : ' workouts'), win: () => 'win' };
+  const meta = [];
+  if (block) meta.push('<span class="ok">🛡️ ' + block + '% blocked · ' + (t.parts || []).map(p => names[p.what] ? names[p.what](p.count) : p.what).join(' · ') + '</span>');
+  if (block < 100) {
+    const r = ai.block_rates || {};
+    meta.push('<span>Habit ' + (r.habit || 10) + '% · workout ' + (r.workout || 40) + '% · win ' + (r.win || 20) + '%</span>');
+  }
+  if (x2 > 1) meta.push('<span class="ouch">😡 Enraged: double</span>');
+  $('baiMeta').innerHTML = meta.join('');
+  const threats = Array.isArray(ai.threats) ? ai.threats : [];
+  const icons = { rest: '🛋️', journal: '📓', streak: '💔' };
+  $('baiThreats').hidden = !threats.length;
+  $('baiThreats').innerHTML = threats.map(th => '<span class="bai-threat">' + (icons[th.key] || '⚠️') + ' ' + escapeText(th.label) + ' <b>−' + range(th.min, th.max) + '</b></span>').join('');
+  const rage = ai.rage;
+  $('baiRageBox').hidden = !rage;
+  if (rage) {
+    const now = Date.now();
+    const fill = Number(rage.fill) || 6;
+    const hours = rage.spent ? 0 : rageHours(rage, now);
+    const pct = Math.round((hours / fill) * 100);
+    el.classList.toggle('raging', !rage.spent && pct >= 80);
+    $('baiRage').style.width = (rage.spent ? 100 : pct) + '%';
+    $('baiRageTxt').textContent = rage.spent ? 'Spent for today' : Math.floor(hours * 10) / 10 + ' / ' + fill + ' h';
+    const h = Number(amsHourFormat.format(new Date(now)));
+    const awake = h >= rage.start && h < rage.end;
+    $('baiRageMeta').innerHTML = rage.spent
+      ? '<span>' + rage.max_strikes + ' strikes today · empty again at 0' + rage.start + ':00</span>'
+      : '<span class="ouch">Full: Goku −' + range(rage.min, rage.max) + '</span><span>Tap −' + (rage.drain || 1) + ' h · workout empties</span>' + (awake ? '' : '<span>Asleep till 0' + rage.start + ':00</span>');
+  }
+}
+function escapeText(s) {
+  return String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+}
+setInterval(() => { if (latestState) renderBossAi(latestState); }, 60000);
 let winSending = false;
 async function tickWin() {
   const win = latestState && latestState.win;
@@ -1945,8 +2036,10 @@ function dayLabel(key) {
 // A healing habit logs a 0-damage boss event: it is about Goku, so it sits
 // under "Me" and is never one of the hits on the boss.
 function isRest(hit) {
-  return hit.kind !== 'hero' && Number(hit.wish) !== 1 && !(Number(hit.damage) > 0);
+  return hit.kind !== 'hero' && Number(hit.wish) !== 1 && Number(hit.knockout) !== 1 && !(Number(hit.damage) > 0);
 }
+// A knockout (Goku at 0 HP) heals the boss: a boss entry, never one of your hits.
+const isKo = hit => Number(hit.knockout) === 1;
 function kindOf(hit) {
   return hit.kind === 'hero' || isRest(hit) ? 'hero' : 'boss';
 }
@@ -1955,7 +2048,7 @@ function renderLog(state) {
   const all = Array.isArray(state.log) ? state.log : [];
   // The four totals describe the fight, so they only count hits on the boss.
   // Shenron's strike counts towards the damage, not as one of your hits.
-  const bossHits = all.filter(hit => kindOf(hit) === 'boss' && Number(hit.wish) !== 1);
+  const bossHits = all.filter(hit => kindOf(hit) === 'boss' && Number(hit.wish) !== 1 && !isKo(hit));
   const damages = bossHits.map(hit => Number(hit.damage) || 0);
   const wished = all.filter(hit => Number(hit.wish) === 1).reduce((a, hit) => a + (Number(hit.damage) || 0), 0);
   $('stDamage').textContent = (damages.reduce((a, b) => a + b, 0) + wished).toLocaleString();
@@ -1996,7 +2089,7 @@ function buildDayHeader(day) {
   label.textContent = day.key ? dayLabel(day.key) : 'Undated';
   const sum = document.createElement('span');
   sum.className = 'day-sum';
-  const total = kind => day.hits.filter(hit => kindOf(hit) === kind).reduce((a, hit) => a + (Number(hit.damage) || 0), 0);
+  const total = kind => day.hits.filter(hit => kindOf(hit) === kind && !isKo(hit)).reduce((a, hit) => a + (Number(hit.damage) || 0), 0);
   const boss = total('boss');
   const hero = total('hero');
   if (boss) sum.append('−' + boss + ' boss');
@@ -2015,8 +2108,9 @@ function appendHitRow(hit) {
   const hero = kindOf(hit) === 'hero' && !rest;
   const crit = !hero && !rest && Number(hit.crit) === 1;
   const wish = Number(hit.wish) === 1;
+  const ko = isKo(hit);
   const row = document.createElement('li');
-  row.className = 'row' + (crit ? ' crit' : '') + (hero ? ' hurt' : '') + (wish ? ' wish' : '') + (rest ? ' rest' : '');
+  row.className = 'row' + (crit ? ' crit' : '') + (hero ? ' hurt' : '') + (wish ? ' wish' : '') + (rest ? ' rest' : '') + (ko ? ' ko' : '');
   const card = document.createElement('div');
   card.className = 'hit';
   const name = document.createElement('div');
@@ -2041,8 +2135,12 @@ function appendHitRow(hit) {
   when.textContent = formatWhen(hit.at) + (boosts.length ? ' · ' + boosts.join(' · ') : '');
   const dmg = document.createElement('div');
   dmg.className = 'hit-dmg';
-  dmg.textContent = rest ? (Number(hit.heal) > 0 ? '+' + hit.heal : '💚') : wish && !Number(hit.damage) ? '🐉' : '−' + (Number(hit.damage) || 0);
-  if (rest) {
+  dmg.textContent = ko ? '+' + (Number(hit.heal_boss) || 0) : rest ? (Number(hit.heal) > 0 ? '+' + hit.heal : '💚') : wish && !Number(hit.damage) ? '🐉' : '−' + (Number(hit.damage) || 0);
+  if (ko) {
+    const left = document.createElement('small');
+    left.textContent = 'boss HP back';
+    dmg.append(left);
+  } else if (rest) {
     const left = document.createElement('small');
     left.textContent = Number(hit.heal) > 0 ? 'HP back' : 'no heal';
     dmg.append(left);
@@ -2053,8 +2151,8 @@ function appendHitRow(hit) {
   }
   card.append(name, dmg, when);
   // Entries published before revert support have no event id to send, and
-  // Shenron's wishes cannot be taken back.
-  if (hit.id && !wish) {
+  // Shenron's wishes and the boss's own moves cannot be taken back.
+  if (hit.id && !wish && Number(hit.boss_move) !== 1) {
     row.dataset.id = hit.id;
     const action = document.createElement('button');
     action.type = 'button';
@@ -2092,6 +2190,7 @@ function renderState(state) {
   renderDamage(state);
   renderField();
   renderWin(state);
+  renderBossAi(state);
   renderRadar(state);
   renderPower(state);
   renderVictory(state);
@@ -2226,7 +2325,7 @@ function renderVictory(state) {
     : summoning ? 'Summoning the next boss. This takes a few minutes.' : (state.boss_name || 'The boss') + ' has fallen';
   $('vBtn').dataset.label = stuck ? 'Try summoning again' : 'Claim victory';
   if (!claimBusy) $('vBtn').textContent = $('vBtn').dataset.label;
-  const bossLog = (Array.isArray(state.log) ? state.log : []).filter(hit => kindOf(hit) === 'boss');
+  const bossLog = (Array.isArray(state.log) ? state.log : []).filter(hit => kindOf(hit) === 'boss' && !isKo(hit));
   // Shenron's strike adds to the damage but is not one of your hits (Claim Victory skips it too).
   const hits = bossLog.filter(hit => Number(hit.wish) !== 1);
   $('vDamage').textContent = bossLog.reduce((a, hit) => a + (Number(hit.damage) || 0), 0).toLocaleString();
