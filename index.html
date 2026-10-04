@@ -966,7 +966,7 @@ function fieldDetailOf(f, state) {
     case 'dusk': return 'Every <b>Evening</b> habit does <b>1.5× damage</b> to the boss.';
     case 'zenkai': return 'Every hit on the boss does <b>20% more damage</b>, whatever the habit, Strava workouts included.';
     case 'crit': return 'Your crit chance goes from <b>' + pct(crit) + '</b> to <b>' + pct(crit + 0.15) + '</b> on every hit. A crit does 1.5× damage.';
-    case 'senzu': return 'Healing habits heal Goku <b>twice as much</b>, and you can heal up to <b>100 HP</b> today instead of ' + (Number(state && state.heal_cap) || 50) + '.';
+    case 'senzu': return 'Healing habits heal Goku <b>twice as much</b>, and you can heal up to <b>' + (baseHealCap(state) + 50) + ' HP</b> today instead of ' + baseHealCap(state) + '.';
     case 'enraged': return 'Bad habits hurt Goku <b>twice as much</b> today. Good habits hit the boss as usual.';
     case 'dragon': return dragonBallsAbout(state) + ' Today they drop <b>three times as often</b>, and a Strava workout is the best chance.';
     default: return '';
@@ -1049,8 +1049,10 @@ function fieldBoostOf(habit, heals) {
   if (f.key === 'senzu' && heals) return { tag: '💚×2', label: 'Senzu day, heals double' };
   return null;
 }
+// heal_cap: 50 HP, raised by the ki charge (quest-engine src/ki.js); a Senzu day adds 50.
+const baseHealCap = state => Number(state && state.heal_cap) || 50;
 function healCapOf(state) {
-  return todayField().key === 'senzu' ? 100 : (Number(state && state.heal_cap) || 50);
+  return baseHealCap(state) + (todayField().key === 'senzu' ? 50 : 0);
 }
 // The first time the card opens on a game day, the front announces the battlefield.
 const FIELD_SEEN_KEY = 'boss-field-seen';
