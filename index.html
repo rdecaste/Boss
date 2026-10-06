@@ -432,9 +432,54 @@ body{width:100vw;height:100vh;height:100dvh}
 .sh-wish small{display:block;margin-top:2px;font-size:11px;font-weight:650;color:var(--muted)}
 .sh-wish span.ic{font-size:24px}
 .sh-close{margin-top:14px;padding:8px 14px;border:0;background:none;color:var(--dim);font:inherit;font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;cursor:pointer}
+/* Shenron's picture and clip (Quest Engine `shenron`, made once): behind the
+   wish screen, on the granted screen and on the last wish in Loot. Without
+   one the glowing 🐉 stands in. */
+.sh-media{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none}
+.sh-media video,.sh-media img{width:100%;height:100%;object-fit:cover;display:block}
+#shenron>.sh-media{opacity:.6}
+#shenron>.sh-media::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(2,8,5,.35),rgba(2,8,5,.55) 45%,rgba(2,8,5,.92))}
+#shenron .sh-panel{position:relative;z-index:1}
+#shenron.has-media{align-items:flex-end}
+#shenron.has-media .sh-dragon{display:none}
+#shenron.has-media .sh-wish{background:rgba(0,0,0,.62);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.sh-frame .sh-media video,.sh-frame .sh-media img{object-position:50% 25%}
+.sh-frame{position:relative;overflow:hidden;border-radius:16px;border:1px solid rgba(80,255,150,.35);background:radial-gradient(60% 70% at 50% 40%,rgba(60,255,140,.4),transparent 70%),linear-gradient(180deg,#02140a,#04070b);box-shadow:0 0 40px rgba(80,255,150,.25)}
+.sh-frame .sh-media{position:absolute}
+.sh-frame .sh-fallback{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:84px;filter:drop-shadow(0 0 26px rgba(80,255,150,.9))}
+.granted .sh-frame{width:100%;aspect-ratio:4/5;max-height:46vh;margin:0 auto}
+.granted .sh-quote{margin-top:14px;font-size:20px;font-weight:900;color:#b9ffd2}
+.granted .sh-sub{margin-top:4px}
+.sh-effect{margin-top:14px;text-align:left}
+.sh-effect .row-h{display:flex;justify-content:space-between;font-size:12px;font-weight:800;font-variant-numeric:tabular-nums}
+.sh-effect .hp-track{margin-top:5px;height:8px;position:relative}
+.sh-effect .hp-fill{transition:width 1400ms cubic-bezier(.2,.9,.3,1)}
+.sh-effect .hp-fill.jade{background:linear-gradient(90deg,#3ad17a,#7dffb0)}
+.sh-effect .big{font-size:15px;font-weight:850;text-align:center;color:#b9ffd2}
+.sh-scatter{margin-top:12px;font-size:12px;font-weight:700;color:var(--muted)}
+.sh-actions{display:flex;justify-content:center;gap:10px;margin-top:14px}
+.sh-actions .summon{animation:none;padding:9px 14px}
+.loot-last{display:flex;flex-direction:column;gap:10px;margin-bottom:12px;padding:12px;border:1px solid rgba(80,255,150,.3);border-radius:14px;background:linear-gradient(140deg,rgba(80,255,150,.1),rgba(255,255,255,.02) 60%)}
+.loot-last[hidden]{display:none}
+.loot-last .sh-frame{aspect-ratio:16/10}
+.ll-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.ll-name{font-size:15px;font-weight:850}
+.ll-when{font-size:11px;color:var(--dim);white-space:nowrap}
+.ll-effect{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;background:rgba(0,0,0,.35)}
+.ll-effect .ic{font-size:20px}
+.ll-effect .k{font-size:9px;font-weight:850;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+.ll-effect .v{font-size:14px;font-weight:850;font-variant-numeric:tabular-nums}
+.ll-effect .v em,.wish-log em{font-style:normal;color:#7dffb0;font-weight:800}
+.ll-meta{font-size:11px;color:var(--muted)}
+.wish-log li{display:grid;grid-template-columns:22px 1fr auto;align-items:center;gap:8px;padding:7px 9px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid var(--line)}
+.wish-log .ic{text-align:center;font-size:15px}
+.wish-log .wl-main{min-width:0}
+.wish-log .wl-t{font-size:12px;font-weight:800}
+.wish-log .wl-d{font-size:11px;font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wish-log .when{align-self:start}
 .row.wish .hit{background:linear-gradient(100deg,rgba(80,255,150,.1),rgba(255,255,255,.03) 60%)}
 .row.wish .hit-dmg{color:#7dffb0}
-@media(prefers-reduced-motion:reduce){.field-reveal,.field-reveal.out,.ball.new,.ball-drop,.shenron,.sh-dragon,.summon{animation:none}.ball-drop{display:none}}
+@media(prefers-reduced-motion:reduce){.sh-effect .hp-fill{transition:none}.field-reveal,.field-reveal.out,.ball.new,.ball-drop,.shenron,.sh-dragon,.summon{animation:none}.ball-drop{display:none}}
 </style>
 </head>
 <body>
@@ -546,6 +591,7 @@ body{width:100vw;height:100vh;height:100dvh}
 </div>
 <div class="panel" id="panelLoot" role="tabpanel" aria-labelledby="tabLoot" hidden>
 <div class="loot">
+<section class="loot-last" id="lootLast" hidden aria-label="Last wish"></section>
 <section class="loot-card">
 <div class="loot-head"><span class="label">🐉 Dragon Balls</span><span class="loot-count" id="lootCount"></span></div>
 <div class="loot-balls" id="lootBalls"></div>
@@ -554,12 +600,13 @@ body{width:100vw;height:100vh;height:100dvh}
 <div class="loot-sub">Found</div>
 <ul class="loot-list" id="lootFound"></ul>
 <div class="loot-sub" id="lootWishHead" hidden>Wishes granted</div>
-<ul class="loot-list" id="lootWishes"></ul>
+<ul class="loot-list wish-log" id="lootWishes"></ul>
 </section>
 </div>
 <div class="hint">Your loot stays with you from boss to boss</div>
 </div>
 <div class="shenron" id="shenron" hidden role="dialog" aria-modal="true" aria-labelledby="shTitle">
+<div class="sh-media" id="shMedia" aria-hidden="true"></div>
 <div class="sh-panel">
 <div class="sh-dragon" aria-hidden="true">🐉</div>
 <div class="sh-title" id="shTitle">Shenron has been summoned</div>
@@ -570,6 +617,16 @@ body{width:100vw;height:100vh;height:100dvh}
 <button class="sh-wish" type="button" data-wish="strike"><span class="ic">☄️</span><span><b>Shenron's strike</b><small>A blow for 30% of the boss's max HP. Never the final one.</small></span></button>
 </div>
 <button class="sh-close" type="button" id="shClose">Not yet</button>
+</div>
+</div>
+<div class="shenron granted" id="shGranted" hidden role="dialog" aria-modal="true" aria-labelledby="sgQuote">
+<div class="sh-panel">
+<div class="sh-frame" id="sgFrame"></div>
+<div class="sh-quote" id="sgQuote">"Your wish has been granted."</div>
+<div class="sh-sub" id="sgName"></div>
+<div class="sh-effect" id="sgEffect"></div>
+<div class="sh-scatter">The Dragon Balls scatter across the world.</div>
+<div class="sh-actions"><button class="summon" type="button" id="sgLoot">See it in Loot</button><button class="sh-close" type="button" id="sgClose">Close</button></div>
 </div>
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -1150,8 +1207,74 @@ function playBallDrop(n) {
   if (navigator.vibrate) navigator.vibrate([20, 60, 20, 60, 80]);
   setTimeout(() => drop.remove(), 2300);
 }
+// Shenron's clip (or picture) from the Quest Engine, muted and looping.
+function shenronMedia(state) {
+  const sh = state && state.shenron;
+  if (!sh || !(sh.video_url || sh.image_url)) return null;
+  const box = document.createElement('div');
+  box.className = 'sh-media';
+  if (sh.video_url && !reduceMotion()) {
+    const v = document.createElement('video');
+    v.muted = true; v.loop = true; v.autoplay = true; v.playsInline = true;
+    v.setAttribute('playsinline', ''); v.setAttribute('muted', '');
+    if (sh.image_url) v.poster = sh.image_url;
+    v.src = sh.video_url;
+    box.append(v);
+    v.play().catch(() => {});
+  } else {
+    const img = document.createElement('img');
+    img.src = sh.image_url || '';
+    img.alt = '';
+    box.append(img);
+  }
+  return box;
+}
+// The framed picture for the granted screen and Loot: the clip, else the 🐉.
+function shenronFrame(el, state) {
+  const media = shenronMedia(state);
+  if (media) el.replaceChildren(media);
+  else {
+    const f = document.createElement('div');
+    f.className = 'sh-fallback';
+    f.textContent = '🐉';
+    el.replaceChildren(f);
+  }
+}
+// What a wish was and what it did, for the granted screen and Loot.
+function wishKindOf(entry) {
+  if (entry.wish_kind) return entry.wish_kind;
+  const h = String(entry.habit || '').toLowerCase();
+  return h.includes('heal') ? 'heal' : h.includes('power') ? 'power' : h.includes('strike') ? 'strike' : '';
+}
+const WISHES = {
+  heal: { ic: '💚', name: 'Full heal', k: 'Goku HP' },
+  power: { ic: '⚡', name: 'Double power', k: 'Every hit on the boss' },
+  strike: { ic: '☄️', name: 'Shenron\'s strike', k: 'Boss HP' }
+};
+function wishInfo(entry) {
+  const kind = wishKindOf(entry);
+  const w = WISHES[kind] || { ic: '🐉', name: String(entry.habit || 'Wish').replace(/^🐉\s*(Shenron:\s*)?/, ''), k: '' };
+  const n = v => Math.round(Number(v) || 0).toLocaleString();
+  let value = '', detail = '';
+  if (kind === 'heal') {
+    value = '<em>+' + n(entry.heal) + ' HP</em> · back to full';
+    detail = 'Goku <em>+' + n(entry.heal) + ' HP</em>, back to full';
+  } else if (kind === 'strike') {
+    const range = entry.hp_before != null && entry.hp_after != null ? n(entry.hp_before) + ' → ' + n(entry.hp_after) + ' ' : '';
+    value = range + '<em>−' + n(entry.damage) + '</em>';
+    detail = 'Boss ' + range + '<em>−' + n(entry.damage) + ' HP</em>';
+  } else if (kind === 'power') {
+    value = '<em>×2</em> until 04:00';
+    detail = 'Every hit <em>×2</em> until 04:00';
+  }
+  return { kind, ic: w.ic, name: w.name, k: w.k, value, detail };
+}
 function openShenron() {
   const s = latestState || {};
+  const media = shenronMedia(s);
+  if (media) $('shMedia').replaceChildren(...media.childNodes);
+  else $('shMedia').replaceChildren();
+  $('shenron').classList.toggle('has-media', !!media);
   const heroFull = !(Number(s.hero_max_hp) > 0) || Number(s.hero_hp) >= Number(s.hero_max_hp);
   document.querySelector('.sh-wish[data-wish="heal"]').disabled = heroFull;
   document.querySelector('.sh-wish[data-wish="power"]').disabled = !!wishToday(s);
@@ -1159,7 +1282,47 @@ function openShenron() {
   $('shenron').hidden = false;
   if (navigator.vibrate) navigator.vibrate([40, 80, 120]);
 }
-function closeShenron() { $('shenron').hidden = true; }
+function closeShenron() { $('shenron').hidden = true; $('shMedia').replaceChildren(); }
+// After a wish: Shenron again, with what the wish did.
+function showGranted(kind, result, before) {
+  const s = latestState || {};
+  shenronFrame($('sgFrame'), s);
+  const info = wishInfo({ wish_kind: kind, heal: result.heal, damage: result.damage, hp_before: result.hp_before, hp_after: result.hp_after, habit: result.habit });
+  $('sgName').textContent = info.ic + ' ' + info.name;
+  const effect = $('sgEffect');
+  effect.replaceChildren();
+  const bar = (label, from, to, max, cls) => {
+    const head = document.createElement('div');
+    head.className = 'row-h';
+    head.innerHTML = '<span></span><span></span>';
+    head.children[0].textContent = label;
+    head.children[1].textContent = Math.round(from) + ' → ' + Math.round(to) + ' / ' + Math.round(max);
+    const track = document.createElement('div');
+    track.className = 'hp-track';
+    const fill = document.createElement('div');
+    fill.className = 'hp-fill' + (cls ? ' ' + cls : '');
+    fill.style.width = (max > 0 ? from / max * 100 : 0) + '%';
+    track.append(fill);
+    effect.append(head, track);
+    requestAnimationFrame(() => requestAnimationFrame(() => { fill.style.width = (max > 0 ? to / max * 100 : 0) + '%'; }));
+  };
+  if (kind === 'heal') {
+    const max = Number(result.hero_max_hp) || Number(s.hero_max_hp) || 0;
+    bar('💚 ' + (s.hero_name || 'Goku'), max - (Number(result.heal) || 0), max, max, 'jade');
+  } else if (kind === 'strike') {
+    bar('☄️ ' + (s.boss_name || 'Boss'), Number(result.hp_before) || 0, Number(result.hp_after) || 0, Number(result.hp_max) || Number(s.max_hp) || 0, '');
+  } else {
+    const big = document.createElement('div');
+    big.className = 'big';
+    big.textContent = '⚡ Every hit on ' + (s.boss_name || 'the boss') + ' ×2 until 04:00';
+    effect.append(big);
+  }
+  $('shGranted').hidden = false;
+  if (navigator.vibrate) navigator.vibrate([60, 60, 160]);
+}
+function closeGranted() { $('shGranted').hidden = true; $('sgFrame').replaceChildren(); }
+$('sgClose').addEventListener('click', event => { event.stopPropagation(); closeGranted(); });
+$('sgLoot').addEventListener('click', event => { event.stopPropagation(); closeGranted(); showTab('loot'); });
 $('summonBtn').addEventListener('click', event => { event.stopPropagation(); openShenron(); });
 $('lootSummon').addEventListener('click', event => { event.stopPropagation(); openShenron(); });
 
@@ -1173,7 +1336,11 @@ function lootLogOf(state) {
   const add = entry => { if (entry && entry.id && !seen.has(entry.id)) { seen.add(entry.id); all.push(entry); } };
   for (const e of Array.isArray(state.dragon_log) ? state.dragon_log : []) add(e);
   for (const hit of Array.isArray(state.log) ? state.log : []) {
-    if (hit.wish) add({ id: hit.id, at: hit.at, habit: hit.habit, boss: state.boss_name || '', wish: 1 });
+    if (hit.wish) {
+      const damage = Number(hit.damage) || 0;
+      add({ id: hit.id, at: hit.at, habit: hit.habit, boss: state.boss_name || '', wish: 1, damage, heal: Number(hit.heal) || 0,
+        hp_after: damage > 0 ? Number(hit.hp_after) : undefined, hp_before: damage > 0 ? Number(hit.hp_after) + damage : undefined });
+    }
     else if (Number(hit.dragon_ball) > 0) add({ id: hit.id, at: hit.at, habit: hit.habit, boss: state.boss_name || '', ball: Number(hit.dragon_ball) });
   }
   const ms = s => { const t = Date.parse(s); return isNaN(t) ? 0 : t; };
@@ -1183,7 +1350,7 @@ let lootSignature = '';
 function renderLoot(state) {
   const mask = Math.max(0, Math.min(ALL_BALLS, Number(state.dragon_balls) || 0));
   const entries = lootLogOf(state);
-  const signature = JSON.stringify([mask, entries]);
+  const signature = JSON.stringify([mask, entries, state.shenron || null]);
   if (signature === lootSignature) return;
   lootSignature = signature;
   const count = ballCountOf(state);
@@ -1237,9 +1404,33 @@ function renderLoot(state) {
   const wishList = $('lootWishes');
   wishList.replaceChildren();
   for (const w of wishes) {
-    const lead = document.createElement('span');
-    lead.textContent = '🐉';
-    wishList.append(row(lead, String(w.habit || 'Shenron').replace(/^🐉\s*/, ''), w.boss, w.at));
+    const info = wishInfo(w);
+    const li = document.createElement('li');
+    li.innerHTML = '<span class="ic"></span><div class="wl-main"><div class="wl-t"></div><div class="wl-d"></div></div><span class="when"></span>';
+    li.querySelector('.ic').textContent = info.ic;
+    li.querySelector('.wl-t').textContent = info.name;
+    li.querySelector('.wl-d').innerHTML = info.detail + (w.boss ? ' · ' : '');
+    if (w.boss) li.querySelector('.wl-d').append(document.createTextNode(w.boss));
+    li.querySelector('.when').textContent = when(w.at);
+    wishList.append(li);
+  }
+  // The last wish, with Shenron's picture and what it did.
+  const last = $('lootLast');
+  last.hidden = !lastWish;
+  if (lastWish) {
+    const info = wishInfo(lastWish);
+    const t = Date.parse(lastWish.at);
+    const time = isNaN(t) ? '' : ' ' + new Date(t).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    last.innerHTML = '<div class="label">🐉 Last wish</div><div class="sh-frame"></div><div class="ll-head"><span class="ll-name"></span><span class="ll-when"></span></div>'
+      + '<div class="ll-effect"><span class="ic"></span><div><div class="k"></div><div class="v"></div></div></div><div class="ll-meta"></div>';
+    shenronFrame(last.querySelector('.sh-frame'), state);
+    last.querySelector('.ll-name').textContent = info.ic + ' ' + info.name;
+    last.querySelector('.ll-when').textContent = when(lastWish.at) + time;
+    last.querySelector('.ic').textContent = info.ic;
+    last.querySelector('.k').textContent = info.k;
+    last.querySelector('.v').innerHTML = info.value;
+    last.querySelector('.ll-effect').hidden = !info.value;
+    last.querySelector('.ll-meta').textContent = (lastWish.boss ? 'Against ' + lastWish.boss + ' · ' : '') + 'all seven Dragon Balls spent';
   }
 }
 // Tapping the radar says what Dragon Balls are.
@@ -1281,7 +1472,7 @@ async function makeWish(kind) {
     const before = hpShare(latestState, 'boss');
     applyLocal(withWish(latestState, result, kind), [{ kind: 'add', id: String(result.event_id || '').replace(/-/g, '') }]);
     if (kind === 'strike') landOnPad(result, 'boss', before);
-    showToast(result.text || result.message);
+    showGranted(kind, result, before);
   } catch (error) {
     openShenron();
     showToast(failMessage(error), true);
