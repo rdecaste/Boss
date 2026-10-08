@@ -359,15 +359,14 @@ body{width:100vw;height:100vh;height:100dvh}
 .win-meta .dmg{color:#ffd35a}
 .win-meta .ouch{color:#ff8f8f}
 .win-meta .ok{color:#7dffb0}
-.comms{position:absolute;top:78px;left:12px;max-width:min(78%,320px);z-index:7;padding:9px 12px 9px;border:1px solid rgba(255,95,95,.45);border-radius:14px 14px 14px 4px;background:rgba(30,6,8,.72);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);box-shadow:0 8px 24px rgba(0,0,0,.45);cursor:pointer}
-.comms.ally{border-color:rgba(125,255,176,.38);background:rgba(6,24,16,.72)}
+.comms{position:absolute;left:14px;right:14px;bottom:50px;z-index:7;cursor:pointer;font-size:13px;font-weight:700;line-height:1.35;color:rgba(255,255,255,.92);text-shadow:0 1px 3px rgba(0,0,0,.95),0 0 10px rgba(0,0,0,.8)}
 .front.won .comms{display:none}
-.cm-who{font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#ff8f8f}
-.cm-text{margin-top:3px;font-size:13.5px;font-weight:750;line-height:1.35;text-shadow:0 1px 4px rgba(0,0,0,.6)}
-.cm-who{padding-right:26px}
-.cm-tap{position:absolute;top:9px;right:11px;font-size:9px;opacity:.45}
-.comms.pop-in{animation:cm-pop .35s ease-out}
-@keyframes cm-pop{0%{transform:scale(.96);opacity:.4}60%{transform:scale(1.02)}100%{transform:none;opacity:1}}
+.cm-who,.cm-text{display:inline}
+.cm-who{margin-right:5px;font-size:10px;font-weight:850;letter-spacing:.08em;text-transform:uppercase;color:#ff8f8f}
+.cm-who::after{content:":"}
+.cm-tap{display:none}
+.comms.pop-in{animation:cm-pop .5s ease-out}
+@keyframes cm-pop{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
 .bossai{display:flex;flex-direction:column;gap:7px;margin:8px 0 0;padding:12px;border:1px solid rgba(255,95,95,.32);border-radius:14px;background:linear-gradient(120deg,rgba(255,95,95,.1),rgba(255,255,255,.02) 70%)}
 .bossai[hidden]{display:none}
 .bai-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
@@ -2375,8 +2374,9 @@ function appendHitRow(hit) {
 }
 
 // ---- 💬 Trash talk (Roy, 8 Oct 2026) ----
-// A speech bubble on the front, under the boss's name (Roy: "put the boss chat
-// on the front card"): the boss taunts you about the fight as it
+// A subtitle line on the front, just above the HP bar (Roy: "put the boss chat
+// on the front card", then "at the bottom… something that disrupts the image
+// less"): the boss taunts you about the fight as it
 // stands (its HP, your hits today, your own bad habits, its 04:00 strike, the
 // rage meter, the battlefield, the Dragon Balls, today's win, the hour), and
 // Goku's allies chime in. A new line comes every 40 s, when you flip back to
@@ -2531,7 +2531,7 @@ function showComms(event) {
   if (!commsLine) { el.hidden = true; return; }
   const ally = !commsLine.boss && ALLIES[commsLine.who];
   el.classList.toggle('ally', !!ally);
-  $('cmWho').innerHTML = ally ? '<b style="color:' + ally.color + '">' + escapeText(ally.name) + '</b>' : '😈 <b>' + escapeText(commsLine.name) + '</b>';
+  $('cmWho').innerHTML = ally ? '<b style="color:' + ally.color + '">' + escapeText(ally.name) + '</b>' : '<b>' + escapeText(commsLine.name) + '</b>';
   $('cmText').textContent = commsLine.text;
   el.hidden = false;
   if (event && !reduceMotion()) { el.classList.remove('pop-in'); void el.offsetWidth; el.classList.add('pop-in'); }
