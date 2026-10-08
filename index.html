@@ -359,11 +359,13 @@ body{width:100vw;height:100vh;height:100dvh}
 .win-meta .dmg{color:#ffd35a}
 .win-meta .ouch{color:#ff8f8f}
 .win-meta .ok{color:#7dffb0}
-.comms{position:relative;margin:2px 0 8px;padding:10px 12px 9px;border:1px solid rgba(255,95,95,.4);border-radius:14px 14px 14px 4px;background:linear-gradient(120deg,rgba(255,60,60,.16),rgba(255,255,255,.02) 75%);cursor:pointer}
-.comms.ally{border-color:rgba(125,255,176,.32);border-radius:14px 14px 4px 14px;background:linear-gradient(120deg,rgba(125,255,176,.1),rgba(255,255,255,.02) 75%)}
+.comms{position:absolute;top:78px;left:12px;max-width:min(78%,320px);z-index:7;padding:9px 12px 9px;border:1px solid rgba(255,95,95,.45);border-radius:14px 14px 14px 4px;background:rgba(30,6,8,.72);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);box-shadow:0 8px 24px rgba(0,0,0,.45);cursor:pointer}
+.comms.ally{border-color:rgba(125,255,176,.38);background:rgba(6,24,16,.72)}
+.front.won .comms{display:none}
 .cm-who{font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#ff8f8f}
-.cm-text{margin-top:3px;font-size:14px;font-weight:750;line-height:1.35}
-.cm-tap{position:absolute;top:9px;right:12px;font-size:9px;opacity:.45}
+.cm-text{margin-top:3px;font-size:13.5px;font-weight:750;line-height:1.35;text-shadow:0 1px 4px rgba(0,0,0,.6)}
+.cm-who{padding-right:26px}
+.cm-tap{position:absolute;top:9px;right:11px;font-size:9px;opacity:.45}
 .comms.pop-in{animation:cm-pop .35s ease-out}
 @keyframes cm-pop{0%{transform:scale(.96);opacity:.4}60%{transform:scale(1.02)}100%{transform:none;opacity:1}}
 .bossai{display:flex;flex-direction:column;gap:7px;margin:8px 0 0;padding:12px;border:1px solid rgba(255,95,95,.32);border-radius:14px;background:linear-gradient(120deg,rgba(255,95,95,.1),rgba(255,255,255,.02) 70%)}
@@ -525,6 +527,7 @@ body{width:100vw;height:100vh;height:100dvh}
 <div class="metric"><div class="label">Boss</div><div class="value boss-name" id="bossName">—</div><div class="epithet" id="bossEpithet"></div></div>
 <div class="metric right"><div class="label">Level</div><div class="value level-num" id="level">—</div><div class="power-mult" id="powerMult"></div></div>
 </div>
+<div class="comms" id="comms" role="button" tabindex="0" aria-live="polite" hidden><div class="cm-who" id="cmWho"></div><div class="cm-text" id="cmText"></div><span class="cm-tap">tap</span></div>
 <div class="hud-bottom" id="hpHud" hidden>
 <div class="hp-head"><span class="label">HP</span><span class="stage-tag" id="stageTag"></span><span class="hp-num" id="hpNum">—</span></div>
 <div class="hp-track"><div class="hp-trail" id="hpTrail"></div><div class="hp-fill" id="hpFill"></div></div>
@@ -544,7 +547,6 @@ body{width:100vw;height:100vh;height:100dvh}
 </div>
 <div class="panel" id="panelAttack" role="tabpanel" aria-labelledby="tabAttack">
 <div class="pad" id="pad">
-<div class="comms" id="comms" role="button" tabindex="0" aria-live="polite" hidden><div class="cm-who" id="cmWho"></div><div class="cm-text" id="cmText"></div><span class="cm-tap">tap for more</span></div>
 <div class="field" id="field" role="button" tabindex="0" aria-expanded="false" aria-controls="fieldMore" hidden><span class="field-ic" id="fieldIc"></span><span class="field-txt"><span class="label">Today's battlefield</span><div class="field-name" id="fieldName"></div><div class="field-fx" id="fieldFx"></div></span><span class="field-chev" aria-hidden="true"></span></div>
 <div class="field-more" id="fieldMore" hidden></div>
 <div class="win" id="win" hidden><button class="win-cb" type="button" id="winCb" role="checkbox" aria-checked="false" aria-label="Hold to tick off today's win"></button><div class="win-body"><div class="win-kicker">Today is a win if…</div><div class="win-text" id="winText"></div><div class="win-meta" id="winMeta"></div></div><span class="charge"></span></div>
@@ -702,8 +704,8 @@ function setFlipped(flipped) {
   backEl.setAttribute('aria-hidden', String(!flipped));
   clearTimeout(flipTimer);
   flipTimer = setTimeout(() => cardEl.classList.toggle('show-back', flipped), flipMs / 2);
-  if (flipped) { logEl.scrollTop = 0; renderTiles(); pickComms(latestState); }
-  else { resumeActiveVideo(); setTimeout(() => { if (latestState) renderDamage(latestState); }, flipMs); }
+  if (flipped) { logEl.scrollTop = 0; renderTiles(); }
+  else { resumeActiveVideo(); setTimeout(() => { if (latestState) renderDamage(latestState); frontComms(); }, flipMs); }
 }
 // Browsers pause muted autoplay video while it is hidden (flipped away, or the
 // tab in the background) and do not always restart it, which leaves the front black.
@@ -1098,7 +1100,7 @@ function toggleFieldMore(event) {
   $('field').setAttribute('aria-expanded', String(open));
 }
 $('field').addEventListener('click', toggleFieldMore);
-$('comms').addEventListener('click', event => { event.stopPropagation(); pickComms(latestState); });
+$('comms').addEventListener('click', event => { event.stopPropagation(); pickComms(latestState); commsFresh = false; showComms(true); });
 $('field').addEventListener('keydown', event => {
   if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); toggleFieldMore(event); }
 });
@@ -2373,11 +2375,13 @@ function appendHitRow(hit) {
 }
 
 // ---- 💬 Trash talk (Roy, 8 Oct 2026) ----
-// A speech bubble on the Attack tab: the boss taunts you about the fight as it
+// A speech bubble on the front, under the boss's name (Roy: "put the boss chat
+// on the front card"): the boss taunts you about the fight as it
 // stands (its HP, your hits today, your own bad habits, its 04:00 strike, the
 // rage meter, the battlefield, the Dragon Balls, today's win, the hour), and
-// Goku's allies chime in. A new line comes each time you open the pad or tap
-// the bubble, and every attack gets a reaction. Allies follow the story: they
+// Goku's allies chime in. A new line comes every 40 s, when you flip back to
+// the front or tap the bubble; after attacks, the front shows the reaction to
+// the last one. Allies follow the story: they
 // only speak once the hero's level reaches the part of the story they join.
 // Only the boss on the card speaks as a villain; nobody names another boss.
 const ALLIES = {
@@ -2415,6 +2419,7 @@ const BOSS_VOICE = [
 ];
 let commsLine = null;
 let commsSeen = [];
+let commsFresh = false;
 function commsLines(state, event) {
   const boss = [], ally = [];
   const lvl = Math.trunc(Number(state.hero_level) || 1);
@@ -2512,8 +2517,15 @@ function pickComms(state, event) {
   const fresh = list.filter(l => !commsSeen.includes(l.text));
   commsLine = Object.assign({ boss: !useAlly, name: String(state.boss_name || 'Boss').split(' — ')[0] }, pick(fresh.length ? fresh : list));
   commsSeen = commsSeen.concat(commsLine.text).slice(-8);
+  commsFresh = !!event;
   showComms(event);
 }
+// Back on the front: the boss's reaction to your last tap, else something new.
+function frontComms() {
+  if (commsFresh) { commsFresh = false; showComms(true); } else pickComms(latestState);
+}
+// A new line every 40 s while the front is on screen.
+setInterval(() => { if (document.visibilityState === 'visible' && !cardEl.classList.contains('is-flipped')) pickComms(latestState); }, 40000);
 function showComms(event) {
   const el = $('comms');
   if (!commsLine) { el.hidden = true; return; }
