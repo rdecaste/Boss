@@ -2378,54 +2378,48 @@ function appendHitRow(hit) {
 // on the front card", then "at the bottom… something that disrupts the image
 // less"): the boss taunts you about the fight as it
 // stands (its HP, your hits today, your own bad habits, its 04:00 strike, the
-// rage meter, the battlefield, the Dragon Balls, today's win, the hour), and
-// Goku's allies chime in. A new line comes every 40 s, when you flip back to
-// the front or tap the bubble; after attacks, the front shows the reaction to
-// the last one. Allies follow the story: they
-// only speak once the hero's level reaches the part of the story they join.
-// Only the boss on the card speaks as a villain; nobody names another boss.
-const ALLIES = {
-  goku: { name: 'Goku', color: '#ffb347', from: 1 }, krillin: { name: 'Krillin', color: '#ffd0a8', from: 1 },
-  roshi: { name: 'Master Roshi', color: '#ff9ec7', from: 1 }, bulma: { name: 'Bulma', color: '#66e0d9', from: 1 },
-  chichi: { name: 'Chi-Chi', color: '#ff8c8c', from: 1 }, yamcha: { name: 'Yamcha', color: '#ffbf80', from: 1 },
-  gohan: { name: 'Gohan', color: '#b48cff', from: 1 }, piccolo: { name: 'Piccolo', color: '#8fe38f', from: 2 },
-  kingkai: { name: 'King Kai', color: '#9fd0ff', from: 2 }, tien: { name: 'Tien', color: '#d9c7ff', from: 2 },
-  vegeta: { name: 'Vegeta', color: '#7fb2ff', from: 3 }, dende: { name: 'Dende', color: '#a6f0a6', from: 3 },
-  trunks: { name: 'Trunks', color: '#c5a3ff', from: 4 }, eighteen: { name: 'Android 18', color: '#ffe48a', from: 5 },
-  hercule: { name: 'Mr. Satan', color: '#ffa07a', from: 5 }, goten: { name: 'Goten', color: '#ffc46b', from: 5 },
-  supremekai: { name: 'Supreme Kai', color: '#d6a8ff', from: 6 }, buu: { name: 'Mr. Buu', color: '#ffb3d9', from: 6 },
-  whis: { name: 'Whis', color: '#c9b6ff', from: 7 }
-};
-// The boss's own voice, for bosses already met (generic lines cover the rest).
+// rage meter, the battlefield, the Dragon Balls, today's win, the hour). A new
+// line comes every 40 s, when you flip back to the front or tap it; after attacks, the front shows the reaction to
+// the last one. Only the boss speaks (Roy, 8 Oct 2026); half the time in his
+// own voice from the series (BOSS_VOICE). No line names another boss.
+// The boss's own voice, after what they said and did in the series. More specific
+// keys first (the first key in the boss's name wins). No line names another boss.
 const BOSS_VOICE = [
-  ['tao', 'I could beat you with my tongue. I have done it before.', 'My fee just went up. You’re more annoying than advertised.'],
-  ['raditz', 'My scouter says you’re a weakling. My scouter is never wrong. …Is it?', 'Habits? Saiyans don’t do habits. We do conquest.'],
-  ['demon king', 'Under my rule every day is a rest day. Tempting, isn’t it?', 'I’m the Demon King. You’re a guy with a to-do list.'],
-  ['jeice', 'Red Magma at your service. Wait. I’m not at your service. Ugh.', 'I’m the fastest of the… well, the second fastest. Doesn’t matter. You’re slow.'],
-  ['recoome', 'Recoome is going to hug you. Very. Hard.', 'You train. Recoome poses. Recoome still wins.'],
-  ['nappa', 'Is your power over 9000? No? Then I’m not worried.', 'Squats? I don’t do squats. I just stand here and look huge.'],
-  ['zarbon', 'Careful with the face. It’s my best feature.', 'Keep this up and I’ll have to transform. Nobody wants that. Least of all my hair.'],
-  ['ginyu', 'Ginyu Force pose! …It’s less impressive on my own.', 'I’d swap bodies with you, but I’ve seen your sleep score.'],
-  ['vegeta', 'A low-class warrior with a habit tracker. Laughable.', 'Every hit you land, I remember. Every. Single. One.'],
-  ['slug', 'My planet is cold and dark. Like your training log.', 'I’ve conquered worlds. I can outlast one man’s willpower.'],
-  ['cell', 'Perfect. I am perfect. Your habits are… a work in progress.', 'I’ll give you ten days to prepare. Use them better than last week.'],
-  ['frieza', 'Ohohoho. You hit me? How adorable.', 'Please. This is only a fraction of my power. A small fraction. Tiny.'],
-  ['android 13', 'I am programmed to win. You are programmed to snooze.', 'Rebooting… still stronger than you.'],
-  ['bojack', 'Pirate rule one: take everything. Rule two: never skip leg day.', 'I’ve been sealed away for centuries. You can’t even seal a streak.'],
-  ['majin vegeta', 'I let the darkness in to get stronger. What’s your excuse?', 'The M on my forehead stands for “more reps than you”.'],
-  ['zamasu', 'Mortals and their little habit trackers. How very… mortal.', 'Justice is a perfect morning routine. Yours is not just.'],
-  ['janemba', 'Jaaanemba! …That’s all I say. It’s working, isn’t it?', 'I’m pure evil. You’re pure snooze button.'],
-  ['dabura', 'I’ll turn your workouts to stone. Then your excuses.', 'King of the Demon Realm, and even I get up before you.']
+  ['tao', 'I once killed a man with my tongue. I’m not joking.', 'I travel by throwing a pillar and jumping on it. Beat that commute.', 'Dodon Ray. You won’t see it coming. You never do.', 'I’m a professional. You’re a guy with a to-do list.'],
+  ['raditz', 'Kakarot! You were sent to wipe out this planet. Why is it still here?', 'A power level of 5? Oh. That was the farmer with the shotgun.', 'No tail? Disgraceful. And no training either?', 'I’ll take the boy. Come and get him. After your workout, obviously.'],
+  ['demon king', 'I declare today Demon King Day. No laws. No rest days.', 'I wished for my youth back. You should wish for some discipline.', 'Your little sealing tricks won’t work on me twice.', 'I’ve already dealt with the tournament fighters. You’re next on the list.'],
+  ['jeice', 'Red Magma of the Ginyu Force! Pose number… we’ll work on it.', 'Crusher Ball! Bet you didn’t see that one coming.', 'I’m the brains of the outfit. The bar is low, but still.', 'Running away isn’t losing. It’s tactical. Ask anyone.'],
+  ['recoome', 'Recoome… KICK! Did you like it? Recoome has more.', 'Ultra Fighting Pose number one! Hold still, Recoome is posing.', 'Recoome Eraser Gun! It looks better than it sounds.', 'Recoome thinks your workouts are cute.'],
+  ['nappa', 'Is your power level over 9000? No? Then don’t waste my time.', 'The Saibamen were the warm-up. You’re the second warm-up.', 'I could flatten this city with two fingers. I’m being generous.', 'I’m bored. Entertain me before I count to three.'],
+  ['zarbon', 'Beauty is power. Your sweaty little workouts disagree, but fine.', 'Don’t make me transform. It ruins the face.', 'I’ll drop you in a lake and let you think about your choices.', 'Elegance wins fights. Brute force just wins… sometimes.'],
+  ['ginyu', 'Ginyu Force, pose! …It hits less hard on my own.', 'Body Change! I’ll take your body. Your sleep score can stay.', 'I’ve been a frog. Being you can’t be much worse.', 'Captain’s orders: you skip today. Go on. Skip.'],
+  ['majin vegeta', 'I let the darkness in to be cruel again. It feels wonderful.', 'Kakarot! I want our fight. Now. No more excuses.', 'The M is a mark of power. Not a mark of shame. …Mostly.', 'Pride drove me to this. What’s driving you? Snacks?'],
+  ['vegeta', 'A low-class warrior with a habit tracker. Laughable.', 'I am the Prince of all Saiyans! Show some respect.', 'Galick Gun… FIRE! Did that wake you up?', 'Over 9000?! No. I refuse to accept a number like that.'],
+  ['slug', 'Kneel! My planet needs a new climate. So do your habits.', 'I wished for youth. You should wish for willpower.', 'My army takes everything. Your rest days first.', 'I can grow giant. Can your streak?'],
+  ['cell', 'The Cell Games begin in ten days. Use them better than last week.', 'Perfect! …is what I’d call your attendance, if it were.', 'I carry the cells of the greatest fighters. And none of your excuses.', 'Do you feel it now? That’s fear. Train it away, if you can.'],
+  ['golden frieza', 'Golden. Like my comeback. Ohohoho.', 'I trained for four months. Imagine what you could do with a year.', 'Did you miss me? I came back from Hell just for you.', 'Gold looks good on me. Defeat would look good on you.'],
+  ['frieza', 'This planet explodes in five minutes. Plenty of time for a workout.', 'Ohohoho. You hit me? How adorable.', 'This is my full power. Enjoy it. Nobody else has.', 'I hate monkeys. And I really hate monkeys who train.'],
+  ['android 13', 'Android 13 activated. Target: the one with the habit tracker.', 'The hat is part of my design. So is your defeat.', 'Red Ribbon Army forever. Your streak, not forever.', 'I absorb spare parts. You absorb snacks.'],
+  ['bojack', 'Galactic pirate rule one: take everything. Rule two: never skip leg day.', 'The tournament is mine. The prize money too.', 'Centuries sealed away, and I still train harder than you.', 'My crew does the dirty work. I do the gloating.'],
+  ['zamasu', 'Mortals are a mistake. I am the correction.', 'Justice is a perfect morning routine. Yours is not just.', 'This world is beautiful. You, less so.', 'Zero Mortals Plan, step one: you.'],
+  ['janemba', 'Jaaanemba! …That’s the whole speech.', 'I was born from all the evil in the afterlife. Your bad habits fit right in.', 'Hell is upside down. You did that? No. I did.', 'I can cut through dimensions. Your excuses are thinner.'],
+  ['dabura', 'One spit and you’re stone. Your streak first.', 'King of the Demon Realm, and even I get up before you.', 'Come visit the Demon Realm. We don’t have gyms.', 'My spear is sharp. My spit is sharper.'],
+  ['dyspo', 'Speed is justice! Fastest in Universe 11!', 'You blinked. That was a full lap for me.', 'A Pride Trooper never quits. You quit at minute twenty.', 'Watch the ears. No, really, watch them.'],
+  ['broly', 'Kakarot… KAKAROT!', 'I just want to fight. Is that so hard?', 'I grew up on a frozen planet with one friend. You have a gym.', 'More. MORE!'],
+  ['beerus', 'I just woke up from a fifty-year nap. Impress me, or I destroy something.', 'Someone ate my pudding. Was it you?', 'Hakai. …Kidding. Probably.', 'If dinner isn’t good, the planet goes. Your choice.'],
+  ['granolah', 'I wished to be the strongest in the universe. The dragon said yes.', 'Revenge doesn’t rest. Neither do I.', 'One eye, one goal, one shot. Make yours count.', 'I hunted for years. I can wait a few more days.'],
+  ['hit', 'I can skip time. You can’t even skip dessert.', 'Half a second. That’s all I need.', 'No contract has ever failed. Yours won’t either.', 'A legendary assassin doesn’t talk. …That was an exception.'],
+  ['gas', 'I wished to be the strongest in the universe. The dragon said yes.', 'My brothers back me. Who backs you?', 'Power without limits. And you have… a habit tracker.', 'Hit me harder. I want to see how far I can go.'],
+  ['moro', 'I eat the energy of planets. Yours looks delicious.', 'My magic is older than your gods.', 'Ten million years in prison, and still more patient than you.', 'Copy, absorb, repeat. Like your workouts, but better.'],
+  ['jiren', 'Strength is everything.', 'Trust no one. Only your own strength.', 'You are not worth my time. …Yet.', 'I have never lost. I don’t plan to start.']
 ];
 let commsLine = null;
 let commsSeen = [];
 let commsFresh = false;
 function commsLines(state, event) {
-  const boss = [], ally = [];
-  const lvl = Math.trunc(Number(state.hero_level) || 1);
+  const boss = [];
   const name = String(state.boss_name || 'The boss').split(' — ')[0];
   const b = (...lines) => lines.forEach(text => boss.push({ text: text }));
-  const a = (who, ...lines) => { if (ALLIES[who] && ALLIES[who].from <= lvl) lines.forEach(text => ally.push({ who: who, text: text })); };
   const hp = Number(state.current_hp) || 0, max = Number(state.max_hp) || 0, pct = max ? (hp / max) * 100 : 100;
   const heroPct = Number(state.hero_max_hp) > 0 ? (Number(state.hero_hp) / Number(state.hero_max_hp)) * 100 : 100;
   const fmt = n => Math.round(Number(n) || 0).toLocaleString();
@@ -2435,38 +2429,29 @@ function commsLines(state, event) {
     const dmg = Number(event.result.damage) || 0;
     if (event.kind === 'hero') {
       b('HA! You hit yourself! I love this habit of yours.', 'Keep doing that. Saves me the effort.', `−${fmt(dmg)} to you, and I didn’t even move. Wonderful.`);
-      a('piccolo', 'You’re feeding the enemy.'); a('chichi', 'What did I tell you about that?!'); a('vegeta', 'Pathetic. Wounded by your own hand.');
-      a('krillin', 'Oof. Okay. Shake it off. Shake it OFF.');
     } else if (event.heal) {
       b('Healing? Coward. Come fight me.', 'Snacks and saunas. Is this a battle or a spa?');
-      a('dende', 'Healed! Now go hit him.'); a('goku', 'Good, rest up! Then we hit him twice as hard.');
     } else if (event.result.critical) {
       b('ARGH! A critical?! Who taught you that?!', 'That one… actually hurt.', 'My HP! My beautiful HP!');
-      a('goku', 'Whoa, nice crit!'); a('vegeta', 'Finally. A real hit.'); a('krillin', 'Did you see his FACE?!'); a('goten', 'Do it again! Do it again!');
     } else if (dmg >= max * 0.1) {
       b(`${fmt(dmg)}?! Fine. One point to you.`, 'Ugh. Lucky shot.');
-      a('yamcha', 'Big hit! That’s the stuff I used to… almost do.'); a('tien', 'Clean strike. Again.');
     } else {
       b('Was that a hit or a high five?', `${fmt(dmg)}? I barely felt it.`, 'Tickles.');
-      a('roshi', 'Small hits add up. Ask any turtle.'); a('kingkai', 'Every little bit counts! Heh. Bit. Like a bite. …Never mind.');
     }
-    if (Number(event.result.dragon_ball) > 0) { b('Wait. Was that a Dragon Ball? Put that down.'); a('bulma', 'A Dragon Ball! My radar is beeping like crazy!'); }
-    return { boss: boss, ally: ally };
+    if (Number(event.result.dragon_ball) > 0) { b('Wait. Was that a Dragon Ball? Put that down.'); }
+    return { boss: boss };
   }
 
-  for (const [key, ...lines] of BOSS_VOICE) if (name.toLowerCase().includes(key)) { b(...lines); break; }
+  const own = BOSS_VOICE.find(([key]) => name.toLowerCase().includes(key));
+  const voice = own ? own.slice(1).map(text => ({ text: text })) : [];
   if (pct > 75) {
     b('Is that all? I’ve had mosquito bites that hurt more.', 'You call that training? I call it my warm-up.', `${fmt(hp)} HP left. Take your time. I have all week.`);
-    a('roshi', 'Big one, eh? Chip away. Every habit counts.'); a('goku', 'He’s strong! This is gonna be fun!');
   } else if (pct > 25) {
     b('Hmph. Lucky hits. That’s all they are.', 'I’ll admit it. That one stung. A little.', 'Half my HP? I was going easy on you.');
-    a('krillin', 'He’s wobbling! Keep it up!'); a('piccolo', 'He’s hurt. Don’t let up now.');
   } else if (pct > 10) {
     b('Wait, wait! Let’s talk about this. A rest day? Rest days sound great.', 'This isn’t possible! Who trains like this?!', `${fmt(hp)} HP… You wouldn’t hit a boss while he’s down… would you?`);
-    a('goku', 'He’s almost done! Finish him!'); a('vegeta', 'End it. Now.'); a('hercule', 'Leave the last hit to me! …Actually, you do it.');
   } else if (pct > 0) {
     b('One more hit and… no. No no no.', 'I surrender! …Is what I’d say if I were weak. Which I’m not. Please stop.');
-    a('gohan', 'One more! You can do it!'); a('trunks', 'Don’t hesitate. Finish it.');
   }
 
   const today = dayKey(Date.now());
@@ -2474,10 +2459,10 @@ function commsLines(state, event) {
   const todays = log.filter(h => h && dayKey(Date.parse(h.at)) === today);
   const hits = todays.filter(h => kindOf(h) === 'boss' && Number(h.damage) > 0 && !isKo(h)).length;
   const selfHits = todays.filter(h => h.kind === 'hero' && Number(h.damage) > 0).length;
-  if (!hits) { b('No hits today? I knew it. You’re scared.', 'Quiet day, hero? I’m enjoying the silence.'); a('chichi', 'Not one hit today? Get out there!'); }
-  else if (hits >= 5) { b(`${hits} hits today?! Do you ever stop?!`); a('goku', `${hits} hits today! You’re on fire!`); }
-  if (selfHits) { b('You hurt yourself today. I didn’t even have to lift a finger.'); a('eighteen', 'Self-inflicted damage. Bold strategy.'); }
-  if (heroPct < 30) { b(`${fmt(state.hero_hp)} HP left on your hero. I can smell it.`); a('dende', 'Your HP is low. Heal up before you go swinging.'); }
+  if (!hits) { b('No hits today? I knew it. You’re scared.', 'Quiet day, hero? I’m enjoying the silence.'); }
+  else if (hits >= 5) { b(`${hits} hits today?! Do you ever stop?!`); }
+  if (selfHits) { b('You hurt yourself today. I didn’t even have to lift a finger.'); }
+  if (heroPct < 30) { b(`${fmt(state.hero_hp)} HP left on your hero. I can smell it.`); }
 
   const ai = state.boss_ai || {};
   if (ai.turn) {
@@ -2486,36 +2471,31 @@ function commsLines(state, event) {
     else if (block === 0) b('At 04:00, I strike. Sleep well. Or don’t.');
   }
   if (ai.rage && !ai.rage.spent && rageHours(ai.rage, Date.now()) / (Number(ai.rage.fill) || 6) >= 0.8) {
-    b('My rage is boiling over. Attack me, or I’m coming to you.'); a('piccolo', 'His rage is almost full. One tap cools him down.');
+    b('My rage is boiling over. Attack me, or I’m coming to you.');
   }
   if (todayField().key === 'enraged') b('Enraged battlefield. Everything I throw hits twice. Come on then.');
   const balls = ballCountOf(state);
-  if (balls >= 4 && balls < 7) { b(`${balls} Dragon Balls? Wishes won’t save you.`); a('bulma', `${balls} of 7! I’m polishing them already.`); }
+  if (balls >= 4 && balls < 7) { b(`${balls} Dragon Balls? Wishes won’t save you.`); }
   const win = state.win;
   if (win && win.text) {
     if (Number(win.done) === 1) b('You ticked today’s win. Enjoy it while it lasts.');
-    else if (hoursToWinEnd(new Date()) <= 5) { b('Today’s win isn’t ticked. Tick-tock. 03:00 is coming.'); a('krillin', 'Hey, today’s win is still open! Quick!'); }
+    else if (hoursToWinEnd(new Date()) <= 5) { b('Today’s win isn’t ticked. Tick-tock. 03:00 is coming.'); }
   }
   const h = Number(amsHourFormat.format(new Date()));
-  if (h >= 23 || h < 4) { b('Up this late? Excellent. Tired heroes make mistakes.'); a('bulma', 'Go to sleep. He’ll still be ugly in the morning.'); }
+  if (h >= 23 || h < 4) { b('Up this late? Excellent. Tired heroes make mistakes.'); }
   const days = state.started_at ? Math.floor((Date.now() - Date.parse(state.started_at)) / 86400000) + 1 : 0;
   if (days >= 4) b(`Day ${days} of this fight and I’m still standing.`);
 
   b(`${name} doesn’t lose. ${name} just… hasn’t won yet.`, 'Your habits are cute. Mine is winning.');
-  a('goku', 'Hey! Let’s go! I’m starving, so let’s make this quick.');
-  a('vegeta', 'Stop chatting and hit him.');
-  a('supremekai', 'Be careful. This one’s power is not to be underestimated.');
-  a('buu', 'Buu turn bad guy into candy? No? Okay. You hit him then.');
-  a('whis', 'Oh, a fight. How exciting. I brought snacks.');
-  return { boss: boss, ally: ally };
+  return { boss: boss, voice: voice };
 }
 function pickComms(state, event) {
   if (!state || state.status !== 'Active') return;
   const pool = commsLines(state, event);
-  const useAlly = pool.ally.length && (!pool.boss.length || Math.random() < (event ? 0.3 : 0.35));
-  const list = useAlly ? pool.ally : pool.boss;
+  // Only the boss speaks here (Roy). Half the time in his own voice from the series.
+  const list = pool.voice && pool.voice.length && Math.random() < 0.5 ? pool.voice : pool.boss;
   const fresh = list.filter(l => !commsSeen.includes(l.text));
-  commsLine = Object.assign({ boss: !useAlly, name: String(state.boss_name || 'Boss').split(' — ')[0] }, pick(fresh.length ? fresh : list));
+  commsLine = Object.assign({ name: String(state.boss_name || 'Boss').split(' — ')[0] }, pick(fresh.length ? fresh : list));
   commsSeen = commsSeen.concat(commsLine.text).slice(-8);
   commsFresh = !!event;
   showComms(event);
@@ -2529,9 +2509,7 @@ setInterval(() => { if (document.visibilityState === 'visible' && !cardEl.classL
 function showComms(event) {
   const el = $('comms');
   if (!commsLine) { el.hidden = true; return; }
-  const ally = !commsLine.boss && ALLIES[commsLine.who];
-  el.classList.toggle('ally', !!ally);
-  $('cmWho').innerHTML = ally ? '<b style="color:' + ally.color + '">' + escapeText(ally.name) + '</b>' : '<b>' + escapeText(commsLine.name) + '</b>';
+  $('cmWho').innerHTML = '<b>' + escapeText(commsLine.name) + '</b>';
   $('cmText').textContent = commsLine.text;
   el.hidden = false;
   if (event && !reduceMotion()) { el.classList.remove('pop-in'); void el.offsetWidth; el.classList.add('pop-in'); }
