@@ -1673,7 +1673,9 @@ function renderBossAi(state) {
   el.hidden = !(ai && ai.turn) || state.status !== 'Active';
   if (el.hidden) return;
   const x2 = todayField().key === 'enraged' ? 2 : 1;
-  const range = (a, b) => { a = Math.round((Number(a) || 0) * x2); b = Math.round((Number(b) || 0) * x2); return a === b ? String(a) : a + '–' + b; };
+  // No hit takes more than 30% of Goku's Max HP (Quest Engine `hit_cap`), Enraged or not.
+  const cap = Number(ai.hit_cap) > 0 ? Number(ai.hit_cap) : Infinity;
+  const range = (a, b) => { a = Math.min(cap, Math.round((Number(a) || 0) * x2)); b = Math.min(cap, Math.round((Number(b) || 0) * x2)); return a === b ? String(a) : a + '–' + b; };
   const t = ai.turn;
   const block = Math.max(0, Math.min(100, Number(t.block) || 0));
   el.classList.toggle('whiff', block >= 100);
