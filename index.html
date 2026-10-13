@@ -383,6 +383,7 @@ body{width:100vw;height:100vh;height:100dvh}
 .bai-meta .ok{color:#7dffb0}
 .bai-meta .ouch{color:#ff8f8f}
 .bai-rage{display:flex;flex-direction:column;gap:5px;padding-top:4px;border-top:1px solid var(--line)}
+.bai-rage[hidden],.bai-threats[hidden]{display:none}
 .bai-threats{display:flex;flex-wrap:wrap;gap:5px}
 .bai-threats[hidden]{display:none}
 .bai-threat{padding:4px 8px;border-radius:999px;border:1px solid rgba(255,95,95,.35);background:rgba(255,95,95,.08);font-size:10px;font-weight:800;color:var(--muted)}
@@ -1708,17 +1709,27 @@ function renderBossAi(state) {
   el.classList.toggle('whiff', block >= 100);
   $('baiDmg').innerHTML = block >= 100 ? 'Blocked' : 'Goku −' + range(t.min, t.max) + (block ? '<small>of ' + range(t.full_min, t.full_max) + '</small>' : '');
   $('baiBlock').style.width = block + '%';
-  const names = { habits: n => n + (n === 1 ? ' habit' : ' habits'), workouts: n => n + (n === 1 ? ' workout' : ' workouts'), win: () => 'win' };
   const meta = [];
-  if (block) meta.push('<span class="ok">🛡️ ' + block + '% blocked · ' + (t.parts || []).map(p => names[p.what] ? names[p.what](p.count) : p.what).join(' · ') + '</span>');
-  if (block < 100) {
-    const r = ai.block_rates || {};
-    meta.push('<span>Habit ' + (r.habit || 10) + '% · workout ' + (r.workout || 40) + '% · win ' + (r.win || 20) + '%</span>');
+  if (Array.isArray(t.missed)) {
+    // Since 13 Oct 2026: what you usually do but haven't done yet today lands
+    // (its weight x days done in the 7 before); done habits keep it off.
+    const missed = t.missed.slice(0, 4).map(p => escapeText(p.name) + ' ' + p.pct + '%').join(' · ') + (t.missed.length > 4 ? ' +' + (t.missed.length - 4) : '');
+    meta.push(t.missed.length ? '<span class="ouch">Not done yet: ' + missed + '</span>' : '<span class="ok">🛡️ Nothing you usually do is left</span>');
+    const r = ai.miss_rates || {};
+    meta.push('<span>Training ' + (r.training || 40) + '% · daily habit ' + (r.habit || 10) + '% × days of the last ' + (ai.window || 7) + '</span>');
+    if (ai.day_cap) meta.push('<span>Max ' + ai.day_cap + ' a night</span>');
+  } else {
+    const names = { habits: n => n + (n === 1 ? ' habit' : ' habits'), workouts: n => n + (n === 1 ? ' workout' : ' workouts'), win: () => 'win' };
+    if (block) meta.push('<span class="ok">🛡️ ' + block + '% blocked · ' + (t.parts || []).map(p => names[p.what] ? names[p.what](p.count) : p.what).join(' · ') + '</span>');
+    if (block < 100) {
+      const r = ai.block_rates || {};
+      meta.push('<span>Habit ' + (r.habit || 10) + '% · workout ' + (r.workout || 40) + '% · win ' + (r.win || 20) + '%</span>');
+    }
   }
   if (x2 > 1) meta.push('<span class="ouch">😡 Enraged: double</span>');
   $('baiMeta').innerHTML = meta.join('');
   const threats = Array.isArray(ai.threats) ? ai.threats : [];
-  const icons = { rest: '🛋️', journal: '📓', streak: '💔' };
+  const icons = { rest: '🛋️', journal: '📓', streak: '💔', sleep: '🥱' };
   $('baiThreats').hidden = !threats.length;
   $('baiThreats').innerHTML = threats.map(th => '<span class="bai-threat">' + (icons[th.key] || '⚠️') + ' ' + escapeText(th.label) + ' <b>−' + range(th.min, th.max) + '</b></span>').join('');
   const rage = ai.rage;
@@ -2437,7 +2448,7 @@ function whyOf(hit, state) {
     return out;
   }
   if (/^boss-rage-/.test(id)) {
-    out.text = 'The <b>rage meter</b> filled after 6 waking hours without a habit tap. The rage meter was removed on 13 Oct; the boss now only strikes at 04:00.';
+    out.text = 'An old rage strike. Until 13 Oct a <b>rage meter</b> struck when you went 6 waking hours without a habit tap. It is gone: the boss now only strikes at 04:00.';
   } else if (strike && strike.why === 'journal') {
     out.text = 'Your journal for <b>' + whyDay(day) + '</b> had none of your answers.';
   } else if (strike && strike.why === 'sleep') {
