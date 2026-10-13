@@ -369,6 +369,7 @@ body{width:100vw;height:100vh;height:100dvh}
 @keyframes cm-pop{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
 .bossai{display:flex;flex-direction:column;gap:7px;margin:8px 0 0;padding:12px;border:1px solid rgba(255,95,95,.32);border-radius:14px;background:linear-gradient(120deg,rgba(255,95,95,.1),rgba(255,255,255,.02) 70%)}
 .bossai[hidden]{display:none}
+.bossai.tap{cursor:pointer}
 .bai-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
 .bai-kicker{font-size:8px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#ff8f8f}
 .bai-dmg{font-size:15px;font-weight:900;letter-spacing:-.01em;color:#ff8f8f;white-space:nowrap}
@@ -383,6 +384,7 @@ body{width:100vw;height:100vh;height:100dvh}
 .bai-meta .ok{color:#7dffb0}
 .bai-meta .ouch{color:#ff8f8f}
 .bai-rage{display:flex;flex-direction:column;gap:5px;padding-top:4px;border-top:1px solid var(--line)}
+.bai-rage[hidden],.bai-threats[hidden]{display:none}
 .bai-threats{display:flex;flex-wrap:wrap;gap:5px}
 .bai-threats[hidden]{display:none}
 .bai-threat{padding:4px 8px;border-radius:999px;border:1px solid rgba(255,95,95,.35);background:rgba(255,95,95,.08);font-size:10px;font-weight:800;color:var(--muted)}
@@ -439,6 +441,24 @@ body{width:100vw;height:100vh;height:100dvh}
 .sh-wish b{display:block;font-size:14px;font-weight:850}
 .sh-wish small{display:block;margin-top:2px;font-size:11px;font-weight:650;color:var(--muted)}
 .sh-wish span.ic{font-size:24px}
+.why{position:absolute;inset:0;z-index:10;display:flex;align-items:flex-end;justify-content:center;padding:16px;background:rgba(2,3,6,.78);cursor:default}
+.why[hidden]{display:none}
+.why-panel{width:100%;max-width:380px;max-height:100%;overflow-y:auto;padding:16px 16px 10px;border:1px solid rgba(255,143,143,.28);border-radius:18px;background:#0d111b;box-shadow:0 18px 40px rgba(0,0,0,.6)}
+.why-title{font-size:16px;font-weight:900;color:#ffb3b3}
+.why-sub{margin-top:2px;font-size:11px;font-weight:700;color:var(--dim)}
+.why-text{margin-top:10px;font-size:13px;line-height:1.4;color:var(--muted)}
+.why-text b{color:#fff}
+.why-rows{display:grid;grid-template-columns:1fr auto;gap:5px 12px;margin-top:12px;font-size:13px;font-variant-numeric:tabular-nums}
+.why-rows .k{color:var(--muted)}
+.why-rows .v{text-align:right;font-weight:800}
+.why-rows .sub{padding-left:12px;font-size:12px;color:var(--dim)}
+.why-rows .sub.v{color:#ff8f8f}
+.why-rows .good,.why-rows .sub.good{color:#7dffa0}
+.why-rows .total{padding-top:6px;border-top:1px solid var(--line);font-weight:900;color:#ff8f8f}
+.why-rows .k.total{color:#fff}
+.why .sh-close{display:block;margin:10px auto 0}
+.row.move .hit{cursor:pointer}
+.row.move .hit-name::after{content:'ⓘ';margin-left:6px;font-size:11px;color:var(--dim)}
 .sh-close{margin-top:14px;padding:8px 14px;border:0;background:none;color:var(--dim);font:inherit;font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;cursor:pointer}
 /* Shenron's picture and clip (Quest Engine `shenron`, made once): behind the
    wish screen, on the granted screen and on the last wish in Loot. Without
@@ -638,6 +658,15 @@ body{width:100vw;height:100vh;height:100dvh}
 <div class="sh-actions"><button class="summon" type="button" id="sgLoot">See it in Loot</button><button class="sh-close" type="button" id="sgClose">Close</button></div>
 </div>
 </div>
+<div class="why" id="why" hidden role="dialog" aria-modal="true" aria-labelledby="whyTitle">
+<div class="why-panel">
+<div class="why-title" id="whyTitle"></div>
+<div class="why-sub" id="whySub"></div>
+<div class="why-text" id="whyText"></div>
+<div class="why-rows" id="whyRows"></div>
+<button class="sh-close" type="button" id="whyClose">Close</button>
+</div>
+</div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 </section>
 </main>
@@ -721,7 +750,7 @@ document.addEventListener('visibilitychange', () => {
 cardEl.addEventListener('click', event => {
   // A swipe or hold ends in a click on some browsers; an open row closes on the next tap.
   if (suppressClick) { suppressClick = false; return; }
-  if (event.target.closest('.row-action, .tile, .win, .comms, .tabs, .filters, .v-btn, .radar, .shenron, .field-reveal, .loot')) return;
+  if (event.target.closest('.row-action, .tile, .win, .comms, .tabs, .filters, .v-btn, .radar, .shenron, .why, .row.move, .bossai.tap, .field-reveal, .loot')) return;
   if (openRow) { closeOpenRow(); return; }
   if (busy) return;
   const flipped = cardEl.classList.contains('is-flipped');
@@ -1667,6 +1696,32 @@ function rageHours(rage, now) {
   }
   return Math.min(Number(rage.fill) || 6, hours);
 }
+const BAI_ICONS = { rest: '🛋️', journal: '📓', streak: '💔', sleep: '🥱' };
+// 🧾 Tonight's 04:00 turn as the day stands, for the popup behind the box.
+function turnForecastOf(state) {
+  const ai = (state && state.boss_ai) || {};
+  const t = ai.turn || {};
+  const r = ai.miss_rates || { training: 40, habit: 10 };
+  const win = ai.window || 7;
+  const x2 = todayField().key === 'enraged' ? 2 : 1;
+  const cap = Number(ai.hit_cap) > 0 ? Number(ai.hit_cap) : Infinity;
+  const range = (a, b) => { a = Math.min(cap, Math.round((Number(a) || 0) * x2)); b = Math.min(cap, Math.round((Number(b) || 0) * x2)); return a === b ? String(a) : a + '–' + b; };
+  const out = { title: "The boss's turn · 04:00", sub: 'Tonight, as today stands', rows: [],
+    text: 'The boss attacks with what you <b>usually do but skip</b>. Each habit not done by 04:00 lands its weight (training ' + r.training + '%, a daily habit ' + r.habit + '%) times the days you did it in the last ' + win + '. Do it today and it lands nothing.' };
+  const row = (k, v, cls) => out.rows.push({ k, v, cls: cls || '' });
+  row('Full attack at your level', range(t.full_min, t.full_max));
+  for (const p of t.missed || []) row(p.name + ' · ' + p.before + ' of ' + win + ' days', '+' + p.pct + '%', 'sub');
+  for (const p of (t.parts || []).filter(p => p.done && p.before > 0)) {
+    const saved = Math.round((p.key === 'training' ? r.training : r.habit) * p.before / win);
+    if (saved > 0) row(p.name + ' done · ' + p.before + ' of ' + win + ' days', '−' + saved + '% kept off', 'sub good');
+  }
+  row('Lands ' + (Number(t.pct) || 0) + '%, before the ki shield', 'Goku −' + range(t.min, t.max), 'total');
+  if (x2 > 1) row('😡 Enraged battlefield', '× 2', 'sub');
+  for (const th of ai.threats || []) row((BAI_ICONS[th.key] || '⚠️') + ' ' + th.label, '−' + range(th.min, th.max));
+  if (ai.day_cap) row('Most the boss takes tonight', ai.day_cap, 'sub');
+  if (ai.regen) row('Boss heals with it', '+' + ai.regen.heal + ' (max +' + ai.regen.full + ')', 'sub');
+  return out;
+}
 function renderBossAi(state) {
   const ai = state && state.boss_ai;
   const el = $('bossAi');
@@ -1681,18 +1736,29 @@ function renderBossAi(state) {
   el.classList.toggle('whiff', block >= 100);
   $('baiDmg').innerHTML = block >= 100 ? 'Blocked' : 'Goku −' + range(t.min, t.max) + (block ? '<small>of ' + range(t.full_min, t.full_max) + '</small>' : '');
   $('baiBlock').style.width = block + '%';
-  const names = { habits: n => n + (n === 1 ? ' habit' : ' habits'), workouts: n => n + (n === 1 ? ' workout' : ' workouts'), win: () => 'win' };
   const meta = [];
-  if (block) meta.push('<span class="ok">🛡️ ' + block + '% blocked · ' + (t.parts || []).map(p => names[p.what] ? names[p.what](p.count) : p.what).join(' · ') + '</span>');
-  if (block < 100) {
-    const r = ai.block_rates || {};
-    meta.push('<span>Habit ' + (r.habit || 10) + '% · workout ' + (r.workout || 40) + '% · win ' + (r.win || 20) + '%</span>');
+  const minimal = Array.isArray(t.missed);
+  el.classList.toggle('tap', minimal);
+  if (minimal) {
+    // Since 13 Oct 2026: minimal here (Roy: "what shows by default is minimal,
+    // when I click it, it should show popup"); the box opens the breakdown.
+    const threats = Array.isArray(ai.threats) ? ai.threats.length : 0;
+    meta.push(t.missed.length ? '<span class="ouch">' + t.missed.length + ' not done yet</span>' : '<span class="ok">🛡️ Nothing left to skip</span>');
+    if (threats) meta.push('<span class="ouch">+' + threats + (threats === 1 ? ' strike' : ' strikes') + '</span>');
+    meta.push('<span>Tap for why</span>');
+  } else {
+    const names = { habits: n => n + (n === 1 ? ' habit' : ' habits'), workouts: n => n + (n === 1 ? ' workout' : ' workouts'), win: () => 'win' };
+    if (block) meta.push('<span class="ok">🛡️ ' + block + '% blocked · ' + (t.parts || []).map(p => names[p.what] ? names[p.what](p.count) : p.what).join(' · ') + '</span>');
+    if (block < 100) {
+      const r = ai.block_rates || {};
+      meta.push('<span>Habit ' + (r.habit || 10) + '% · workout ' + (r.workout || 40) + '% · win ' + (r.win || 20) + '%</span>');
+    }
   }
   if (x2 > 1) meta.push('<span class="ouch">😡 Enraged: double</span>');
   $('baiMeta').innerHTML = meta.join('');
   const threats = Array.isArray(ai.threats) ? ai.threats : [];
-  const icons = { rest: '🛋️', journal: '📓', streak: '💔' };
-  $('baiThreats').hidden = !threats.length;
+  const icons = BAI_ICONS;
+  $('baiThreats').hidden = !threats.length || minimal;
   $('baiThreats').innerHTML = threats.map(th => '<span class="bai-threat">' + (icons[th.key] || '⚠️') + ' ' + escapeText(th.label) + ' <b>−' + range(th.min, th.max) + '</b></span>').join('');
   const rage = ai.rage;
   $('baiRageBox').hidden = !rage;
@@ -2243,10 +2309,11 @@ function dayLabel(key) {
 // A healing habit logs a 0-damage boss event: it is about Goku, so it sits
 // under "Me" and is never one of the hits on the boss.
 function isRest(hit) {
-  return hit.kind !== 'hero' && Number(hit.wish) !== 1 && Number(hit.knockout) !== 1 && !(Number(hit.damage) > 0);
+  return hit.kind !== 'hero' && Number(hit.wish) !== 1 && Number(hit.knockout) !== 1 && Number(hit.regen) !== 1 && !(Number(hit.damage) > 0);
 }
 // A knockout (Goku at 0 HP) heals the boss: a boss entry, never one of your hits.
-const isKo = hit => Number(hit.knockout) === 1;
+// The boss's 04:00 regeneration heals it the same way (no hit, + boss HP).
+const isKo = hit => Number(hit.knockout) === 1 || Number(hit.regen) === 1;
 function kindOf(hit) {
   return hit.kind === 'hero' || isRest(hit) ? 'hero' : 'boss';
 }
@@ -2317,7 +2384,8 @@ function appendHitRow(hit) {
   const wish = Number(hit.wish) === 1;
   const ko = isKo(hit);
   const row = document.createElement('li');
-  row.className = 'row' + (crit ? ' crit' : '') + (hero ? ' hurt' : '') + (wish ? ' wish' : '') + (rest ? ' rest' : '') + (ko ? ' ko' : '');
+  const move = Number(hit.boss_move) === 1;
+  row.className = 'row' + (crit ? ' crit' : '') + (hero ? ' hurt' : '') + (wish ? ' wish' : '') + (rest ? ' rest' : '') + (ko ? ' ko' : '') + (move ? ' move' : '');
   const card = document.createElement('div');
   card.className = 'hit';
   const name = document.createElement('div');
@@ -2373,7 +2441,105 @@ function appendHitRow(hit) {
     row.append(card);
     logEl.append(row);
   }
+  // The boss's own moves explain themselves when tapped (Roy, 13 Oct 2026).
+  if (move) {
+    row.tabIndex = 0;
+    row.setAttribute('role', 'button');
+    row.addEventListener('click', () => openWhy(hit));
+    row.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openWhy(hit); } });
+  }
 }
+
+// ---- 🧾 Why the boss hit that hard (Roy, 13 Oct 2026: "when I click the boss
+// attack in the log, it should show a popup with the breakdown of the attack
+// points and why") ----
+// The Quest Engine keeps each 04:00 night's breakdown in `boss_nights` (by
+// request id, src/bossai.js nightRecord); older strikes only have the log row.
+const whyEsc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const whyDay = d => dayLabelFormat.format(new Date(d + 'T12:00:00Z')).replace(',', '');
+function whyOf(hit, state) {
+  const id = String(hit.move || '');
+  const day = (id.match(/(\d{4}-\d{2}-\d{2})/) || [])[1] || '';
+  const night = day && state && state.boss_nights ? state.boss_nights[day] : null;
+  const strike = night && night.strikes ? night.strikes[id] : null;
+  const out = { title: hit.habit || 'Boss move', sub: formatWhen(hit.at) + (day ? ' · for ' + whyDay(day) : ''), text: '', rows: [] };
+  const row = (k, v, cls) => out.rows.push({ k, v, cls: cls || '' });
+  if (Number(hit.knockout) === 1) {
+    out.text = 'Goku dropped to <b>0 HP</b>, so the boss healed <b>25% of its Max HP</b>.';
+    row('Boss HP back', '+' + (Number(hit.heal_boss) || 0), 'total');
+    return out;
+  }
+  if (/^boss-regen-/.test(id)) {
+    const pct = night && night.regen ? night.regen.pct : null;
+    out.text = 'With its 04:00 turn the boss heals up to <b>10% of its Max HP</b>, times the share of its turn that landed' + (pct != null ? ' (<b>' + pct + '%</b>)' : '') + '. Miss nothing you usually do and it heals nothing.';
+    row('Boss HP back', '+' + (Number(hit.heal_boss) || 0), 'total');
+    return out;
+  }
+  if (/^boss-rage-/.test(id)) {
+    out.text = 'An old rage strike. Until 13 Oct a <b>rage meter</b> struck when you went 6 waking hours without a habit tap. It is gone: the boss now only strikes at 04:00.';
+  } else if (strike && strike.why === 'journal') {
+    out.text = 'Your journal for <b>' + whyDay(day) + '</b> had none of your answers.';
+  } else if (strike && strike.why === 'sleep') {
+    out.text = 'Your night before <b>' + whyDay(day) + '</b> came out as <b>Take it easy</b>.';
+  } else if (/^boss-turn-/.test(id) && night && night.turn) {
+    out.text = 'The boss attacks with what you <b>usually do but skipped</b> on ' + whyDay(day) + '. Each miss lands its weight (training ' + night.rates.training + '%, a daily habit ' + night.rates.habit + '%) times the days you did it in the ' + night.window + ' days before.';
+  } else if (/^boss-(rest|journal|streak|sleep)-/.test(id)) {
+    out.text = { rest: 'Days in a row without training.', journal: 'An empty journal.', streak: 'A habit streak of 3+ days broke.', sleep: 'A "Take it easy" night.' }[id.split('-')[1]];
+  }
+  const m = strike && strike.math;
+  if (!m) {
+    if (!out.text) out.text = 'A 04:00 strike from before the boss kept its breakdown.';
+    if (Number(hit.shield) > 0) row('Ki shield took', '−' + hit.shield, 'good');
+    row('Goku lost', '−' + (Number(hit.damage) || 0), 'total');
+    return out;
+  }
+  row('Attack roll (' + m.min + '–' + m.max + ')', m.base_roll);
+  let at = m.base_roll * m.level;
+  row('× level ' + Number(m.level).toFixed(2), Math.round(at));
+  if (Number(m.enraged) > 1) { at *= m.enraged; row('× ' + m.enraged + ' Enraged battlefield', Math.round(at)); }
+  if (/^boss-turn-/.test(id) && night && night.turn) {
+    row('× your misses: ' + night.turn.pct + '% lands', m.uncapped);
+    for (const p of night.turn.missed || []) row(p.name + ' · ' + p.before + ' of ' + night.window + ' days', '+' + p.pct + '%', 'sub');
+    if (!(night.turn.missed || []).length) row('Nothing you usually do was skipped', '0%', 'sub good');
+    // What the habits you did kept off (their weight x days of the 7 before).
+    for (const p of night.turn.kept || []) {
+      const saved = Math.round((p.key === 'training' ? night.rates.training : night.rates.habit) * p.before / night.window);
+      if (saved > 0) row(p.name + ' done · ' + p.before + ' of ' + night.window + ' days', '−' + saved + '% kept off', 'sub good');
+    }
+  }
+  if (m.hit_cap != null && m.uncapped > m.hit_cap) row('Capped at 30% of Max HP', m.hit_cap);
+  const beforeCap = m.hit_cap != null ? Math.min(m.uncapped, m.hit_cap) : m.uncapped;
+  if (m.strike_cap != null && m.rolled < beforeCap) row('Night cap (35% of Max HP), left', m.strike_cap);
+  if (Number(m.shield) > 0) row('Ki shield took', '−' + m.shield, 'good');
+  row('Goku lost', '−' + m.damage, 'total');
+  row('HP', m.hp_before + ' → ' + m.hp_after, 'sub');
+  if (strike.skipped) out.text += ' Not struck: the night cap was used up.';
+  return out;
+}
+function openWhy(hit) {
+  if (suppressClick) { suppressClick = false; return; }
+  showWhy(whyOf(hit, latestState));
+}
+function showWhy(w) {
+  $('whyTitle').textContent = w.title;
+  $('whySub').textContent = w.sub;
+  $('whyText').innerHTML = w.text;
+  $('whyRows').replaceChildren(...w.rows.flatMap(r => {
+    const k = document.createElement('span');
+    k.className = 'k ' + r.cls;
+    k.textContent = r.k;
+    const v = document.createElement('span');
+    v.className = 'v ' + r.cls;
+    v.textContent = r.v;
+    return [k, v];
+  }));
+  $('why').hidden = false;
+  $('whyClose').focus();
+}
+$('whyClose').addEventListener('click', () => { $('why').hidden = true; });
+$('bossAi').addEventListener('click', () => { if ($('bossAi').classList.contains('tap')) showWhy(turnForecastOf(latestState)); });
+$('why').addEventListener('click', event => { if (event.target === $('why')) $('why').hidden = true; });
+$('why').addEventListener('keydown', event => { if (event.key === 'Escape') $('why').hidden = true; });
 
 // ---- 💬 Trash talk (Roy, 8 Oct 2026) ----
 // A subtitle line on the front, just above the HP bar (Roy: "put the boss chat
