@@ -369,6 +369,7 @@ body{width:100vw;height:100vh;height:100dvh}
 @keyframes cm-pop{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
 .bossai{display:flex;flex-direction:column;gap:7px;margin:8px 0 0;padding:12px;border:1px solid rgba(255,95,95,.32);border-radius:14px;background:linear-gradient(120deg,rgba(255,95,95,.1),rgba(255,255,255,.02) 70%)}
 .bossai[hidden]{display:none}
+.bossai.tap{cursor:pointer}
 .bai-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
 .bai-kicker{font-size:8px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#ff8f8f}
 .bai-dmg{font-size:15px;font-weight:900;letter-spacing:-.01em;color:#ff8f8f;white-space:nowrap}
@@ -749,7 +750,7 @@ document.addEventListener('visibilitychange', () => {
 cardEl.addEventListener('click', event => {
   // A swipe or hold ends in a click on some browsers; an open row closes on the next tap.
   if (suppressClick) { suppressClick = false; return; }
-  if (event.target.closest('.row-action, .tile, .win, .comms, .tabs, .filters, .v-btn, .radar, .shenron, .why, .row.move, .field-reveal, .loot')) return;
+  if (event.target.closest('.row-action, .tile, .win, .comms, .tabs, .filters, .v-btn, .radar, .shenron, .why, .row.move, .bossai.tap, .field-reveal, .loot')) return;
   if (openRow) { closeOpenRow(); return; }
   if (busy) return;
   const flipped = cardEl.classList.contains('is-flipped');
@@ -1695,6 +1696,32 @@ function rageHours(rage, now) {
   }
   return Math.min(Number(rage.fill) || 6, hours);
 }
+const BAI_ICONS = { rest: '🛋️', journal: '📓', streak: '💔', sleep: '🥱' };
+// 🧾 Tonight's 04:00 turn as the day stands, for the popup behind the box.
+function turnForecastOf(state) {
+  const ai = (state && state.boss_ai) || {};
+  const t = ai.turn || {};
+  const r = ai.miss_rates || { training: 40, habit: 10 };
+  const win = ai.window || 7;
+  const x2 = todayField().key === 'enraged' ? 2 : 1;
+  const cap = Number(ai.hit_cap) > 0 ? Number(ai.hit_cap) : Infinity;
+  const range = (a, b) => { a = Math.min(cap, Math.round((Number(a) || 0) * x2)); b = Math.min(cap, Math.round((Number(b) || 0) * x2)); return a === b ? String(a) : a + '–' + b; };
+  const out = { title: "The boss's turn · 04:00", sub: 'Tonight, as today stands', rows: [],
+    text: 'The boss attacks with what you <b>usually do but skip</b>. Each habit not done by 04:00 lands its weight (training ' + r.training + '%, a daily habit ' + r.habit + '%) times the days you did it in the last ' + win + '. Do it today and it lands nothing.' };
+  const row = (k, v, cls) => out.rows.push({ k, v, cls: cls || '' });
+  row('Full attack at your level', range(t.full_min, t.full_max));
+  for (const p of t.missed || []) row(p.name + ' · ' + p.before + ' of ' + win + ' days', '+' + p.pct + '%', 'sub');
+  for (const p of (t.parts || []).filter(p => p.done && p.before > 0)) {
+    const saved = Math.round((p.key === 'training' ? r.training : r.habit) * p.before / win);
+    if (saved > 0) row(p.name + ' done · ' + p.before + ' of ' + win + ' days', '−' + saved + '% kept off', 'sub good');
+  }
+  row('Lands ' + (Number(t.pct) || 0) + '%, before the ki shield', 'Goku −' + range(t.min, t.max), 'total');
+  if (x2 > 1) row('😡 Enraged battlefield', '× 2', 'sub');
+  for (const th of ai.threats || []) row((BAI_ICONS[th.key] || '⚠️') + ' ' + th.label, '−' + range(th.min, th.max));
+  if (ai.day_cap) row('Most the boss takes tonight', ai.day_cap, 'sub');
+  if (ai.regen) row('Boss heals with it', '+' + ai.regen.heal + ' (max +' + ai.regen.full + ')', 'sub');
+  return out;
+}
 function renderBossAi(state) {
   const ai = state && state.boss_ai;
   const el = $('bossAi');
@@ -1710,14 +1737,15 @@ function renderBossAi(state) {
   $('baiDmg').innerHTML = block >= 100 ? 'Blocked' : 'Goku −' + range(t.min, t.max) + (block ? '<small>of ' + range(t.full_min, t.full_max) + '</small>' : '');
   $('baiBlock').style.width = block + '%';
   const meta = [];
-  if (Array.isArray(t.missed)) {
-    // Since 13 Oct 2026: what you usually do but haven't done yet today lands
-    // (its weight x days done in the 7 before); done habits keep it off.
-    const missed = t.missed.slice(0, 4).map(p => escapeText(p.name) + ' ' + p.pct + '%').join(' · ') + (t.missed.length > 4 ? ' +' + (t.missed.length - 4) : '');
-    meta.push(t.missed.length ? '<span class="ouch">Not done yet: ' + missed + '</span>' : '<span class="ok">🛡️ Nothing you usually do is left</span>');
-    const r = ai.miss_rates || {};
-    meta.push('<span>Training ' + (r.training || 40) + '% · daily habit ' + (r.habit || 10) + '% × days of the last ' + (ai.window || 7) + '</span>');
-    if (ai.day_cap) meta.push('<span>Max ' + ai.day_cap + ' a night</span>');
+  const minimal = Array.isArray(t.missed);
+  el.classList.toggle('tap', minimal);
+  if (minimal) {
+    // Since 13 Oct 2026: minimal here (Roy: "what shows by default is minimal,
+    // when I click it, it should show popup"); the box opens the breakdown.
+    const threats = Array.isArray(ai.threats) ? ai.threats.length : 0;
+    meta.push(t.missed.length ? '<span class="ouch">' + t.missed.length + ' not done yet</span>' : '<span class="ok">🛡️ Nothing left to skip</span>');
+    if (threats) meta.push('<span class="ouch">+' + threats + (threats === 1 ? ' strike' : ' strikes') + '</span>');
+    meta.push('<span>Tap for why</span>');
   } else {
     const names = { habits: n => n + (n === 1 ? ' habit' : ' habits'), workouts: n => n + (n === 1 ? ' workout' : ' workouts'), win: () => 'win' };
     if (block) meta.push('<span class="ok">🛡️ ' + block + '% blocked · ' + (t.parts || []).map(p => names[p.what] ? names[p.what](p.count) : p.what).join(' · ') + '</span>');
@@ -1729,8 +1757,8 @@ function renderBossAi(state) {
   if (x2 > 1) meta.push('<span class="ouch">😡 Enraged: double</span>');
   $('baiMeta').innerHTML = meta.join('');
   const threats = Array.isArray(ai.threats) ? ai.threats : [];
-  const icons = { rest: '🛋️', journal: '📓', streak: '💔', sleep: '🥱' };
-  $('baiThreats').hidden = !threats.length;
+  const icons = BAI_ICONS;
+  $('baiThreats').hidden = !threats.length || minimal;
   $('baiThreats').innerHTML = threats.map(th => '<span class="bai-threat">' + (icons[th.key] || '⚠️') + ' ' + escapeText(th.label) + ' <b>−' + range(th.min, th.max) + '</b></span>').join('');
   const rage = ai.rage;
   $('baiRageBox').hidden = !rage;
@@ -2490,7 +2518,9 @@ function whyOf(hit, state) {
 }
 function openWhy(hit) {
   if (suppressClick) { suppressClick = false; return; }
-  const w = whyOf(hit, latestState);
+  showWhy(whyOf(hit, latestState));
+}
+function showWhy(w) {
   $('whyTitle').textContent = w.title;
   $('whySub').textContent = w.sub;
   $('whyText').innerHTML = w.text;
@@ -2507,6 +2537,7 @@ function openWhy(hit) {
   $('whyClose').focus();
 }
 $('whyClose').addEventListener('click', () => { $('why').hidden = true; });
+$('bossAi').addEventListener('click', () => { if ($('bossAi').classList.contains('tap')) showWhy(turnForecastOf(latestState)); });
 $('why').addEventListener('click', event => { if (event.target === $('why')) $('why').hidden = true; });
 $('why').addEventListener('keydown', event => { if (event.key === 'Escape') $('why').hidden = true; });
 
